@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">ECODELI</string>
+    <string name="welcome_title">Bienvenue sur EcoDeli</string>
+    <string name="connexion">Connexion</string>
+    <string name="inscription">Inscription</string>
+    <string name="hint_nom">ex: Larry</string>
+    <string name="hint_prenom">ex: Dupond</string>
+    <string name="hint_email">exemple@ecodeli.fr</string>
+    <string name="hint_password">Mot de passe</string>
+    <string name="hint_confirm">Confirmation</string>
+    <string name="hint_birth">jj/mm/aaaa</string>
+    <string name="register">S’inscrire</string>
+    <string name="nfc_icon_desc">Icône NFC</string>
+</resources>

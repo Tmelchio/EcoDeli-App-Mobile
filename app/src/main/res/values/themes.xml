@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Ecodeli" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Couleur de texte par défaut -->
+        <item name="android:textColor">@color/default_text_color</item>
+    </style>
+
+    <style name="Theme.Ecodeli" parent="Base.Theme.Ecodeli" />
+</resources>

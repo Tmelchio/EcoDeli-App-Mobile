@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/popup_background"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/menuProfil"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Profil"
+        style="@style/PopupItemStyle" />
+
+    <TextView
+        android:id="@+id/menuClient"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Espace Client"
+        style="@style/PopupItemStyle" />
+
+    <TextView
+        android:id="@+id/menuLivreur"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Espace Livreur"
+        style="@style/PopupItemStyle" />
+
+    <TextView
+        android:id="@+id/menuNotif"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Notifications"
+        style="@style/PopupItemStyle" />
+
+    <TextView
+        android:id="@+id/menuParam"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Paramètres"
+        style="@style/PopupItemStyle" />
+
+    <TextView
+        android:id="@+id/menuLogout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Déconnexion"
+        style="@style/PopupItemStyle" />
+</LinearLayout>

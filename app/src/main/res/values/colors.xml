@@ -3,4 +3,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="default_text_color">#000000</color>
+    <color name="ecodeli_green">#00C853</color>
 </resources>

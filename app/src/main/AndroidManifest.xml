@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" >
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Feature NFC (optionnel) -->
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -11,21 +22,57 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Ecodeli"
-        tools:targetApi="31" >
+        tools:targetApi="31">
 
-        <!-- Ajout de LoginActivity -->
-        <activity android:name=".LoginActivity" />
-
-        <!-- Activité de démarrage -->
+        <!-- Activité principale -->
         <activity
-            android:name=".RegisterActivity"
-            android:exported="true" >
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-    </application>
+        <!-- Authentification avec NFC -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Ecodeli">
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
 
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <!-- Dashboard Client -->
+        <activity
+            android:name=".ClientDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <!-- Profil -->
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
+        <!-- Activités Client -->
+        <activity
+            android:name=".CommandesListActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
+        <activity
+            android:name=".PrestationsListActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
+    </application>
 </manifest>

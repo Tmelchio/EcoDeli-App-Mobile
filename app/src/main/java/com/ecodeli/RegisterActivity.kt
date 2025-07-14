@@ -29,11 +29,9 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        // Initialiser les services
         prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
         apiService = ApiService()
 
-        // Initialiser les vues
         initViews()
         setupClickListeners()
     }
@@ -71,59 +69,47 @@ class RegisterActivity : AppCompatActivity() {
         val confirmPassword = etConfirmPassword.text.toString().trim()
         val birthDate = etBirthDate.text.toString().trim()
 
-        // Validation des champs
         if (nom.isEmpty()) {
             etNom.error = "Nom requis"
             return
         }
-
         if (prenom.isEmpty()) {
             etPrenom.error = "Prénom requis"
             return
         }
-
         if (email.isEmpty()) {
             etEmail.error = "Email requis"
             return
         }
-
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.error = "Email invalide"
             return
         }
-
         if (password.isEmpty()) {
             etPassword.error = "Mot de passe requis"
             return
         }
-
         if (password.length < 6) {
             etPassword.error = "Mot de passe trop court (min 6 caractères)"
             return
         }
-
         if (confirmPassword.isEmpty()) {
             etConfirmPassword.error = "Confirmation requise"
             return
         }
-
         if (password != confirmPassword) {
             etConfirmPassword.error = "Les mots de passe ne correspondent pas"
             return
         }
-
         if (birthDate.isEmpty()) {
             etBirthDate.error = "Date de naissance requise"
             return
         }
-
-        // Validation de la date (format basique)
         if (!isValidDate(birthDate)) {
             etBirthDate.error = "Format de date invalide (jj/mm/aaaa)"
             return
         }
 
-        // Appel API simulé
         btnRegister.isEnabled = false
         btnRegister.text = "Inscription..."
 
@@ -142,10 +128,8 @@ class RegisterActivity : AppCompatActivity() {
 
                 if (success) {
                     Toast.makeText(this, "Inscription réussie ! Veuillez vous connecter.", Toast.LENGTH_LONG).show()
-
-                    // Rediriger vers la page de connexion
                     val intent = Intent(this, LoginActivity::class.java)
-                    intent.putExtra("email", email) // Pré-remplir l'email
+                    intent.putExtra("email", email)
                     startActivity(intent)
                     finish()
                 } else {
@@ -159,11 +143,9 @@ class RegisterActivity : AppCompatActivity() {
         return try {
             val parts = date.split("/")
             if (parts.size != 3) return false
-
             val day = parts[0].toInt()
             val month = parts[1].toInt()
             val year = parts[2].toInt()
-
             day in 1..31 && month in 1..12 && year in 1900..2024
         } catch (e: Exception) {
             false

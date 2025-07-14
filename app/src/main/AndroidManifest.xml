@@ -8,10 +8,10 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Feature NFC (optionnel) -->
+    <!-- Feature NFC obligatoire -->
     <uses-feature
         android:name="android.hardware.nfc"
-        android:required="false" />
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -72,6 +72,20 @@
             android:name=".PrestationsListActivity"
             android:exported="false"
             android:parentActivityName=".ClientDashboardActivity" />
+
+        <activity android:name=".NfcLoginActivity" />
+
+        <!-- Enregistrement NFC -->
+        <activity
+            android:name=".NfcRegisterActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <!-- Succès NFC -->
+        <activity
+            android:name=".NfcSuccessActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
 
     </application>
 </manifest>

@@ -1,0 +1,23 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Carte enregistrée avec succès !"
+        android:textSize="20sp"
+        android:textColor="#00C853"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/btnHome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Retour à l'accueil"
+        android:background="@drawable/btn_green"
+        android:textColor="#000000" />
+</LinearLayout>

@@ -13,6 +13,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var tvUserEmail: TextView
     private lateinit var btnLogout: Button
     private lateinit var btnBack: Button
+    private lateinit var btnRegisterBadge: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,15 +30,15 @@ class ProfileActivity : AppCompatActivity() {
         tvUserEmail = findViewById(R.id.tvUserEmail)
         btnLogout = findViewById(R.id.btnLogout)
         btnBack = findViewById(R.id.btnBack)
+        btnRegisterBadge = findViewById(R.id.btnRegisterBadge)
     }
 
     private fun setupClickListeners() {
-        btnLogout.setOnClickListener {
-            performLogout()
-        }
-
-        btnBack.setOnClickListener {
-            finish()
+        btnLogout.setOnClickListener { performLogout() }
+        btnBack.setOnClickListener { finish() }
+        btnRegisterBadge.setOnClickListener {
+            val intent = Intent(this, NfcRegisterActivity::class.java)
+            startActivity(intent)
         }
     }
 

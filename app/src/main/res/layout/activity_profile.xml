@@ -74,6 +74,15 @@
         </LinearLayout>
     </LinearLayout>
 
+    <Button
+        android:id="@+id/btnRegisterBadge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enregistrer son badge"
+        android:background="@drawable/btn_green"
+        android:textColor="#000000"
+        android:layout_marginTop="16dp" />
+
     <!-- Actions -->
     <LinearLayout
         android:layout_width="match_parent"

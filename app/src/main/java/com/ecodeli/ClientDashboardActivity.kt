@@ -5,17 +5,15 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
-import com.ecodeli.adapters.CommandeAdapter
-import com.ecodeli.models.Commande
-import com.ecodeli.models.Prestation
+import com.ecodeli.models.api.CommandeRequest
+import com.ecodeli.models.api.PrestationRequest
 import com.ecodeli.services.RealApiService
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ClientDashboardActivity : AppCompatActivity() {
 
@@ -31,12 +29,6 @@ class ClientDashboardActivity : AppCompatActivity() {
     private lateinit var btnDemanderPrestation: Button
     private lateinit var btnMesCommandes: Button
     private lateinit var btnMesPrestations: Button
-
-    // RecyclerView pour activités récentes
-    private lateinit var rvActivitesRecentes: RecyclerView
-    private lateinit var activiteAdapter: CommandeAdapter
-
-    private val commandesList = mutableListOf<Commande>()
 
     // Données utilisateur
     private var userId: String = ""
@@ -57,7 +49,6 @@ class ClientDashboardActivity : AppCompatActivity() {
         // Initialiser les vues
         initViews()
         setupClickListeners()
-        setupRecyclerView()
 
         // Charger les données depuis l'API réelle
         loadUserData()
@@ -72,7 +63,6 @@ class ClientDashboardActivity : AppCompatActivity() {
         btnDemanderPrestation = findViewById(R.id.btnDemanderPrestation)
         btnMesCommandes = findViewById(R.id.btnMesCommandes)
         btnMesPrestations = findViewById(R.id.btnMesPrestations)
-        rvActivitesRecentes = findViewById(R.id.rvActivitesRecentes)
 
         // Personnaliser le message de bienvenue
         val firstname = prefs.getString("user_firstname", "") ?: ""
@@ -113,34 +103,43 @@ class ClientDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupRecyclerView() {
-        activiteAdapter = CommandeAdapter(commandesList) { commande ->
-            showCommandeDetails(commande)
-        }
-
-        rvActivitesRecentes.apply {
-            layoutManager = LinearLayoutManager(this@ClientDashboardActivity)
-            adapter = activiteAdapter
-        }
-    }
-
     private fun loadUserData() {
-        // Charger les statistiques utilisateur depuis l'API réelle
-        // TODO: Implémenter les appels API réels pour les statistiques
-        // Pour l'instant, afficher des valeurs par défaut
-        tvTotalCommandes.text = "0"
-        tvTotalPrestations.text = "0"
-        tvTotalDepense.text = "0€"
-
-        // TODO: Charger les commandes récentes depuis l'API
-        loadRecentActivities()
+        // Charger les statistiques depuis l'API
+        loadStatistiques()
     }
 
-    private fun loadRecentActivities() {
-        // TODO: Implémenter le chargement des activités récentes depuis l'API réelle
-        // Pour l'instant, vider la liste
-        commandesList.clear()
-        activiteAdapter.notifyDataSetChanged()
+    private fun loadStatistiques() {
+        lifecycleScope.launch {
+            // Charger les commandes pour calculer les stats
+            apiService.getCommandes { success, commandes, _ ->
+                if (success && commandes != null) {
+                    tvTotalCommandes.text = commandes.size.toString()
+                    val totalCommandesDepense = commandes.sumOf { it.montant }
+
+                    // Charger les prestations
+                    lifecycleScope.launch {
+                        apiService.getPrestations { successP, prestations, _ ->
+                            val totalPrestations = if (successP && prestations != null) {
+                                prestations.size
+                            } else 0
+
+                            val totalPrestationsDepense = if (successP && prestations != null) {
+                                prestations.sumOf { it.tarif }
+                            } else 0.0
+
+                            tvTotalPrestations.text = totalPrestations.toString()
+                            val totalDepense = totalCommandesDepense + totalPrestationsDepense
+                            tvTotalDepense.text = String.format("%.2f€", totalDepense)
+                        }
+                    }
+                } else {
+                    // Valeurs par défaut en cas d'erreur
+                    tvTotalCommandes.text = "0"
+                    tvTotalPrestations.text = "0"
+                    tvTotalDepense.text = "0€"
+                }
+            }
+        }
     }
 
     private fun showCreateCommandeDialog() {
@@ -178,16 +177,28 @@ class ClientDashboardActivity : AppCompatActivity() {
             btnCreer.isEnabled = false
             btnCreer.text = "Création..."
 
-            // TODO: Implémenter la création de commande avec l'API réelle
-            lifecycleScope.launch {
-                // Simuler un délai pour l'instant
-                kotlinx.coroutines.delay(1000)
+            // Utiliser la vraie API
+            val request = CommandeRequest(
+                commercant = commercant,
+                description = description,
+                montant = montant,
+                adresse_livraison = adresse
+            )
 
-                runOnUiThread {
-                    btnCreer.isEnabled = true
-                    btnCreer.text = "Créer"
-                    Toast.makeText(this@ClientDashboardActivity, "Fonctionnalité en cours de développement", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
+            lifecycleScope.launch {
+                apiService.createCommande(request) { success, commande, message ->
+                    runOnUiThread {
+                        btnCreer.isEnabled = true
+                        btnCreer.text = "Créer"
+
+                        if (success) {
+                            Toast.makeText(this@ClientDashboardActivity, message ?: "Commande créée", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                            loadUserData() // Recharger les stats
+                        } else {
+                            Toast.makeText(this@ClientDashboardActivity, message ?: "Erreur de création", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         }
@@ -241,25 +252,55 @@ class ClientDashboardActivity : AppCompatActivity() {
             val description = etDescription.text.toString().trim()
             val adresse = etAdresse.text.toString().trim()
             val dateSouhaitee = etDateSouhaitee.text.toString().trim()
+            val dureeStr = etDureeEstimee.text.toString().trim()
+            val budgetStr = etBudget.text.toString().trim()
 
             if (description.isEmpty() || adresse.isEmpty() || dateSouhaitee.isEmpty()) {
                 Toast.makeText(this, "Veuillez remplir tous les champs obligatoires", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
+            val duree = try {
+                if (dureeStr.isEmpty()) 60 else dureeStr.toInt()
+            } catch (e: NumberFormatException) {
+                Toast.makeText(this, "Durée invalide", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val budget = try {
+                if (budgetStr.isEmpty()) 0.0 else budgetStr.toDouble()
+            } catch (e: NumberFormatException) {
+                Toast.makeText(this, "Budget invalide", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             btnCreer.isEnabled = false
             btnCreer.text = "Création..."
 
-            // TODO: Implémenter la création de prestation avec l'API réelle
-            lifecycleScope.launch {
-                // Simuler un délai pour l'instant
-                kotlinx.coroutines.delay(1000)
+            // Utiliser la vraie API
+            val request = PrestationRequest(
+                titre = typePrestation,
+                description = description,
+                tarif = budget,
+                date_prestation = formatDateForApi(dateSouhaitee),
+                duree_estimee = duree,
+                adresse = adresse
+            )
 
-                runOnUiThread {
-                    btnCreer.isEnabled = true
-                    btnCreer.text = "Créer"
-                    Toast.makeText(this@ClientDashboardActivity, "Fonctionnalité en cours de développement", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
+            lifecycleScope.launch {
+                apiService.createPrestation(request) { success, prestation, message ->
+                    runOnUiThread {
+                        btnCreer.isEnabled = true
+                        btnCreer.text = "Créer"
+
+                        if (success) {
+                            Toast.makeText(this@ClientDashboardActivity, message ?: "Prestation créée", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                            loadUserData() // Recharger les stats
+                        } else {
+                            Toast.makeText(this@ClientDashboardActivity, message ?: "Erreur de création", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         }
@@ -271,9 +312,17 @@ class ClientDashboardActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showCommandeDetails(commande: Commande) {
-        // TODO: Implémenter l'affichage des détails avec l'API réelle
-        Toast.makeText(this, "Détails de commande - En cours de développement", Toast.LENGTH_SHORT).show()
+    private fun formatDateForApi(dateString: String): String {
+        return try {
+            // Convertir du format dd/MM/yyyy vers ISO
+            val inputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            val date = inputFormat.parse(dateString)
+            outputFormat.format(date ?: Date())
+        } catch (e: Exception) {
+            // En cas d'erreur, utiliser la date actuelle
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).format(Date())
+        }
     }
 
     override fun onResume() {

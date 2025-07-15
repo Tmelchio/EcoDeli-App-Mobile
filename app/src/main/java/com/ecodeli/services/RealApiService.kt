@@ -17,7 +17,8 @@ class RealApiService(private val context: Context) {
         private const val TAG = "RealApiService"
     }
 
-    // Connexion
+    // ==================== AUTHENTIFICATION ====================
+
     suspend fun login(email: String, password: String, callback: (Boolean, String?, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
@@ -52,7 +53,6 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // Inscription
     suspend fun register(userData: Map<String, String>, callback: (Boolean, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
@@ -86,7 +86,6 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // Validation token
     suspend fun validateToken(callback: (Boolean, UserInfo?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
@@ -115,7 +114,6 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // Déconnexion
     suspend fun logout(callback: (Boolean, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
@@ -137,7 +135,142 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // Sauvegarde info utilisateur
+    // ==================== COMMANDES ====================
+
+    suspend fun getCommandes(callback: (Boolean, List<CommandeResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.getCommandes()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val commandes = response.body() ?: emptyList()
+                        callback(true, commandes, null)
+                    } else {
+                        callback(false, null, "Erreur lors du chargement des commandes")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get commandes", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun createCommande(request: CommandeRequest, callback: (Boolean, CommandeResponse?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.createCommande(request)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val commande = response.body()
+                        callback(true, commande, "Commande créée avec succès")
+                    } else {
+                        callback(false, null, "Erreur lors de la création de la commande")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur create commande", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun validateCommande(commandeId: Int, callback: (Boolean, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.validateCommande(commandeId)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        callback(true, "Commande validée avec succès")
+                    } else {
+                        callback(false, "Erreur lors de la validation")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur validate commande", e)
+            withContext(Dispatchers.Main) {
+                callback(false, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    // ==================== PRESTATIONS ====================
+
+    suspend fun getPrestations(callback: (Boolean, List<PrestationResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.getPrestations()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val prestations = response.body() ?: emptyList()
+                        callback(true, prestations, null)
+                    } else {
+                        callback(false, null, "Erreur lors du chargement des prestations")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get prestations", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun createPrestation(request: PrestationRequest, callback: (Boolean, PrestationResponse?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.createPrestation(request)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val prestation = response.body()
+                        callback(true, prestation, "Prestation créée avec succès")
+                    } else {
+                        callback(false, null, "Erreur lors de la création de la prestation")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur create prestation", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun cancelPrestation(prestationId: Int, callback: (Boolean, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.cancelPrestation(prestationId)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        callback(true, "Prestation annulée avec succès")
+                    } else {
+                        callback(false, "Erreur lors de l'annulation")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur cancel prestation", e)
+            withContext(Dispatchers.Main) {
+                callback(false, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    // ==================== HELPER METHODS ====================
+
     private fun saveUserInfo(user: UserInfo) {
         prefs.edit().apply {
             putString("user_id", user._id.toString())
@@ -157,7 +290,6 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // Effacer info utilisateur
     private fun clearUserInfo() {
         prefs.edit().clear().apply()
     }

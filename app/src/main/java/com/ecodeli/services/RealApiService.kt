@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import android.util.Log
 import com.ecodeli.models.api.*
 import com.ecodeli.network.ApiClient
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -12,9 +14,135 @@ class RealApiService(private val context: Context) {
 
     private val apiClient = ApiClient(context)
     private val prefs: SharedPreferences = context.getSharedPreferences("ecodeli_prefs", Context.MODE_PRIVATE)
+    private val gson = Gson()
 
     companion object {
         private const val TAG = "RealApiService"
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private fun extractUserInfo(userField: Any?): UserInfo? {
+        return when (userField) {
+            is JsonObject -> {
+                try {
+                    gson.fromJson(userField, UserInfo::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion UserInfo depuis JsonObject", e)
+                    null
+                }
+            }
+            is Map<*, *> -> {
+                try {
+                    val jsonString = gson.toJson(userField)
+                    gson.fromJson(jsonString, UserInfo::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion UserInfo depuis Map", e)
+                    null
+                }
+            }
+            else -> {
+                Log.d(TAG, "UserField type inconnu: ${userField?.javaClass}")
+                null
+            }
+        }
+    }
+
+    private fun extractProductInfo(productField: Any?): ProductResponse? {
+        return when (productField) {
+            is JsonObject -> {
+                try {
+                    gson.fromJson(productField, ProductResponse::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion ProductResponse depuis JsonObject", e)
+                    null
+                }
+            }
+            is Map<*, *> -> {
+                try {
+                    val jsonString = gson.toJson(productField)
+                    gson.fromJson(jsonString, ProductResponse::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion ProductResponse depuis Map", e)
+                    null
+                }
+            }
+            else -> {
+                Log.d(TAG, "ProductField type inconnu: ${productField?.javaClass}")
+                null
+            }
+        }
+    }
+
+    private fun extractLocationInfo(locationField: Any?): LocationInfo? {
+        return when (locationField) {
+            is JsonObject -> {
+                try {
+                    gson.fromJson(locationField, LocationInfo::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion LocationInfo depuis JsonObject", e)
+                    null
+                }
+            }
+            is Map<*, *> -> {
+                try {
+                    val jsonString = gson.toJson(locationField)
+                    gson.fromJson(jsonString, LocationInfo::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion LocationInfo depuis Map", e)
+                    null
+                }
+            }
+            else -> {
+                Log.d(TAG, "LocationField type inconnu: ${locationField?.javaClass}")
+                null
+            }
+        }
+    }
+
+    private fun extractDeliveryStatusInfo(statusField: Any?): DeliveryStatusInfo? {
+        return when (statusField) {
+            is JsonObject -> {
+                try {
+                    gson.fromJson(statusField, DeliveryStatusInfo::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion DeliveryStatusInfo depuis JsonObject", e)
+                    null
+                }
+            }
+            is Map<*, *> -> {
+                try {
+                    val jsonString = gson.toJson(statusField)
+                    gson.fromJson(jsonString, DeliveryStatusInfo::class.java)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur conversion DeliveryStatusInfo depuis Map", e)
+                    null
+                }
+            }
+            else -> {
+                Log.d(TAG, "StatusField type inconnu: ${statusField?.javaClass}")
+                null
+            }
+        }
+    }
+
+    private fun extractStringFromAny(field: Any?, defaultValue: String = ""): String {
+        return when (field) {
+            is String -> field
+            is JsonObject -> field.get("name")?.asString ?: defaultValue
+            is Map<*, *> -> field["name"] as? String ?: defaultValue
+            else -> defaultValue
+        }
+    }
+
+    private fun extractDoubleFromAny(field: Any?, defaultValue: Double = 0.0): Double {
+        return when (field) {
+            is Number -> field.toDouble()
+            is String -> field.toDoubleOrNull() ?: defaultValue
+            is JsonObject -> field.get("price")?.asDouble ?: defaultValue
+            is Map<*, *> -> (field["price"] as? Number)?.toDouble() ?: defaultValue
+            else -> defaultValue
+        }
     }
 
     // ==================== AUTHENTIFICATION ====================
@@ -158,6 +286,12 @@ class RealApiService(private val context: Context) {
                     if (response.isSuccessful) {
                         val requests = response.body() ?: emptyList()
                         Log.d(TAG, "Commandes récupérées: ${requests.size}")
+
+                        // Log des données pour debug
+                        requests.forEachIndexed { index, request ->
+                            Log.d(TAG, "Commande $index: product=${request.product?.javaClass}, status=${request.delivery_status?.javaClass}")
+                        }
+
                         callback(true, requests, null)
                     } else {
                         Log.e(TAG, "Erreur récupération commandes: ${response.code()} - ${response.errorBody()?.string()}")
@@ -256,6 +390,12 @@ class RealApiService(private val context: Context) {
                     if (response.isSuccessful) {
                         val services = response.body() ?: emptyList()
                         Log.d(TAG, "Prestations récupérées: ${services.size}")
+
+                        // Log des données pour debug
+                        services.forEachIndexed { index, service ->
+                            Log.d(TAG, "Service $index: user=${service.user?.javaClass}, actor=${service.actor?.javaClass}")
+                        }
+
                         callback(true, services, null)
                     } else {
                         Log.e(TAG, "Erreur récupération prestations: ${response.code()} - ${response.errorBody()?.string()}")
@@ -345,11 +485,43 @@ class RealApiService(private val context: Context) {
             putString("user_name", user.name)
             putString("user_description", user.description ?: "")
             putString("user_join_date", user.join_date)
-            putString("user_role", user.role.name)
 
+            // Gérer le rôle qui peut être un objet ou un ID
+            when (user.role) {
+                is JsonObject -> {
+                    val roleObj = user.role as JsonObject
+                    val roleName = roleObj.get("name")?.asString ?: "user"
+                    putString("user_role", roleName)
+                }
+                is Map<*, *> -> {
+                    val roleName = (user.role as Map<*, *>)["name"] as? String ?: "user"
+                    putString("user_role", roleName)
+                }
+                else -> putString("user_role", "user")
+            }
+
+            // Gérer l'abonnement
             user.subscription?.let { sub ->
-                putString("user_subscription", sub.name)
-                putFloat("user_subscription_price", sub.price.toFloat())
+                when (sub) {
+                    is JsonObject -> {
+                        val subObj = sub as JsonObject
+                        val subName = subObj.get("name")?.asString ?: "free"
+                        val subPrice = subObj.get("price")?.asDouble ?: 0.0
+                        putString("user_subscription", subName)
+                        putFloat("user_subscription_price", subPrice.toFloat())
+                    }
+                    is Map<*, *> -> {
+                        val subMap = sub as Map<*, *>
+                        val subName = subMap["name"] as? String ?: "free"
+                        val subPrice = (subMap["price"] as? Number)?.toFloat() ?: 0.0f
+                        putString("user_subscription", subName)
+                        putFloat("user_subscription_price", subPrice)
+                    }
+                    else -> {
+                        putString("user_subscription", "free")
+                        putFloat("user_subscription_price", 0.0f)
+                    }
+                }
             }
 
             apply()

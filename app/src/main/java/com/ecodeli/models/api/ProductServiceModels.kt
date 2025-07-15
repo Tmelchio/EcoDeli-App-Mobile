@@ -9,15 +9,15 @@ data class ProductRequest(
     val location: LocationData  // Données de localisation
 )
 
-// Réponse quand on récupère un produit
+// Réponse quand on récupère un produit - CORRIGÉ
 data class ProductResponse(
     val _id: Int,
     val name: String,
     val image: String?,
     val price: Double,
-    val size: Int,      // Taille du produit
-    val seller: Int,       // Vendeur
-    val location: LocationInfo?  // Lieu de récupération
+    val size: Any, // Peut être un objet PackageSize ou un simple ID
+    val seller: Any, // Peut être un objet UserInfo ou un simple ID
+    val location: Any? // Peut être un objet LocationInfo ou un simple ID
 )
 
 // ==================== DEMANDES DE PRODUITS (Remplace les "commandes") ====================
@@ -28,19 +28,19 @@ data class ProductRequestRequest(
     val location: Int    // ID de notre adresse de livraison
 )
 
-// Réponse = notre "commande"
+// Réponse = notre "commande" - CORRIGÉ
 data class ProductRequestResponse(
     val _id: Int,
     val creation_date: String,
     val date: String?,
     val accepted_date: String?,
     val validation_code: String?,
-    val delivery_location: LocationInfo?,    // Où livrer
-    val receiver: UserInfo?,                 // Nous (client)
-    val product: ProductResponse?,           // Le produit commandé
-    val amount: Int,                        // Quantité
-    val delivery: DeliveryInfo?,            // Info livreur
-    val delivery_status: DeliveryStatusInfo? // Statut livraison
+    val delivery_location: Any?, // Peut être un objet LocationInfo ou null
+    val receiver: Any?, // Peut être un objet UserInfo ou un simple ID
+    val product: Any?, // Peut être un objet ProductResponse ou null
+    val amount: Int,
+    val delivery: Any?, // Peut être un objet DeliveryInfo ou null
+    val delivery_status: Any? // Peut être un objet DeliveryStatusInfo ou null
 )
 
 // ==================== SERVICES (Remplace les "prestations") ====================
@@ -52,7 +52,7 @@ data class ServiceRequest(
     val date: String        // Date souhaitée (format ISO)
 )
 
-// Réponse = notre demande de service
+// Réponse = notre demande de service - CORRIGÉ
 data class ServiceResponse(
     val _id: Int,
     val creation_date: String,
@@ -61,8 +61,8 @@ data class ServiceResponse(
     val image: String?,
     val description: String,
     val price: Double,
-    val user: UserInfo?,        // Nous (client qui demande)
-    val actor: UserInfo?        // Prestataire assigné (null si pas encore)
+    val user: Any?, // Peut être un objet UserInfo ou un simple ID
+    val actor: Any? // Peut être un objet UserInfo ou null
 )
 
 // ==================== MODÈLES AUXILIAIRES ====================
@@ -82,7 +82,7 @@ data class LocationInfo(
 
 data class DeliveryInfo(
     val _id: Int,
-    val deliveryman: UserInfo?,
+    val deliveryman: Any?, // Peut être un objet UserInfo ou null
     val latitude: Double?,
     val longitude: Double?
 )
@@ -134,36 +134,4 @@ data class PrestationResponse(
     val adresse: String,
     val duree_estimee: Int,
     val date_prestation: String
-)
-
-// ==================== MODÈLES UTILISATEUR (pour référence) ====================
-// Ces modèles devraient déjà exister dans ApiModels.kt
-// Mais je les ajoute ici pour éviter les erreurs de compilation
-
-data class UserInfo(
-    val _id: Int,
-    val firstname: String,
-    val name: String,
-    val image: String?,
-    val email: String,
-    val description: String?,
-    val join_date: String,
-    val role: RoleInfo,
-    val subscription: SubscriptionInfo? = null
-)
-
-data class RoleInfo(
-    val _id: Int,
-    val name: String,
-    val access_level: Int
-)
-
-data class SubscriptionInfo(
-    val _id: Int,
-    val name: String,
-    val color: String,
-    val price: Double,
-    val assurance_max: Double,
-    val delivery_reduction: Double,
-    val permanent_reduction: Double
 )

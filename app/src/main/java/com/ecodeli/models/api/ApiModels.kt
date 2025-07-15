@@ -25,7 +25,7 @@ data class RegisterResponse(
     val userId: Int
 )
 
-// Utilisateur
+// Utilisateur - CORRIGÉ pour gérer les différents formats
 data class UserInfo(
     val _id: Int,
     val firstname: String,
@@ -34,16 +34,18 @@ data class UserInfo(
     val email: String,
     val description: String?,
     val join_date: String,
-    val role: RoleInfo,
-    val subscription: SubscriptionInfo? = null
+    val role: Any, // Peut être un objet RoleInfo ou un simple ID
+    val subscription: Any? = null // Peut être un objet SubscriptionInfo ou un simple ID
 )
 
+// Rôle complet
 data class RoleInfo(
     val _id: Int,
     val name: String,
     val access_level: Int
 )
 
+// Abonnement complet
 data class SubscriptionInfo(
     val _id: Int,
     val name: String,
@@ -54,7 +56,12 @@ data class SubscriptionInfo(
     val permanent_reduction: Double
 )
 
-// Erreur
+// Erreur API
 data class ApiError(
     val error: String
+)
+
+// Réponse de validation de token
+data class TokenValidationResponse(
+    val user: UserInfo
 )

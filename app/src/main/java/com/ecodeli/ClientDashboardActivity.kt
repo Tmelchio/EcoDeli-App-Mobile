@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import com.ecodeli.models.api.LocationData
+import com.google.gson.JsonObject
 
 class ClientDashboardActivity : AppCompatActivity() {
 
@@ -83,6 +84,8 @@ class ClientDashboardActivity : AppCompatActivity() {
         }
 
         tvWelcome.text = "Bienvenue, $displayName"
+
+        Log.d(TAG, "Vues initialisées pour: $displayName")
     }
 
     private fun setupClickListeners() {
@@ -126,14 +129,43 @@ class ClientDashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 Log.d(TAG, "Chargement des statistiques")
+
                 // Charger les demandes de produits pour calculer les stats
                 apiService.getCommandes { success, productRequests, errorMessage ->
                     if (success && productRequests != null) {
                         Log.d(TAG, "Commandes chargées: ${productRequests.size}")
-                        tvTotalCommandes.text = productRequests.size.toString()
-                        val totalCommandesDepense = productRequests.sumOf {
-                            (it.product?.price ?: 0.0) * it.amount
+
+                        runOnUiThread {
+                            tvTotalCommandes.text = productRequests.size.toString()
                         }
+
+                        // Calculer le total des dépenses commandes de manière sécurisée
+                        val totalCommandesDepense = productRequests.sumOf { request ->
+                            try {
+                                val productPrice = when (request.product) {
+                                    is JsonObject -> {
+                                        val productObj = request.product as JsonObject
+                                        productObj.get("price")?.asDouble ?: 0.0
+                                    }
+                                    is Map<*, *> -> {
+                                        val productMap = request.product as Map<*, *>
+                                        (productMap["price"] as? Number)?.toDouble() ?: 0.0
+                                    }
+                                    else -> {
+                                        Log.w(TAG, "Product type inconnu: ${request.product?.javaClass}")
+                                        0.0
+                                    }
+                                }
+                                val total = productPrice * request.amount
+                                Log.d(TAG, "Commande: prix=$productPrice, quantité=${request.amount}, total=$total")
+                                total
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Erreur calcul prix commande", e)
+                                0.0
+                            }
+                        }
+
+                        Log.d(TAG, "Total dépenses commandes: $totalCommandesDepense")
 
                         // Charger les services
                         lifecycleScope.launch {
@@ -147,20 +179,37 @@ class ClientDashboardActivity : AppCompatActivity() {
                                 }
 
                                 val totalPrestationsDepense = if (successP && services != null) {
-                                    services.sumOf { it.price }
-                                } else 0.0
+                                    val total = services.sumOf { service ->
+                                        try {
+                                            Log.d(TAG, "Service: ${service.name}, prix=${service.price}")
+                                            service.price
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Erreur calcul prix service", e)
+                                            0.0
+                                        }
+                                    }
+                                    Log.d(TAG, "Total dépenses prestations: $total")
+                                    total
+                                } else {
+                                    0.0
+                                }
 
-                                tvTotalPrestations.text = totalPrestations.toString()
-                                val totalDepense = totalCommandesDepense + totalPrestationsDepense
-                                tvTotalDepense.text = String.format("%.2f€", totalDepense)
+                                runOnUiThread {
+                                    tvTotalPrestations.text = totalPrestations.toString()
+                                    val totalDepense = totalCommandesDepense + totalPrestationsDepense
+                                    tvTotalDepense.text = String.format("%.2f€", totalDepense)
+                                    Log.d(TAG, "Statistiques mises à jour: commandes=$totalPrestations, dépenses=$totalDepense")
+                                }
                             }
                         }
                     } else {
                         Log.e(TAG, "Erreur commandes: $errorMessage")
                         // Valeurs par défaut en cas d'erreur
-                        tvTotalCommandes.text = "0"
-                        tvTotalPrestations.text = "0"
-                        tvTotalDepense.text = "0€"
+                        runOnUiThread {
+                            tvTotalCommandes.text = "0"
+                            tvTotalPrestations.text = "0"
+                            tvTotalDepense.text = "0.00€"
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -168,7 +217,7 @@ class ClientDashboardActivity : AppCompatActivity() {
                 runOnUiThread {
                     tvTotalCommandes.text = "0"
                     tvTotalPrestations.text = "0"
-                    tvTotalDepense.text = "0€"
+                    tvTotalDepense.text = "0.00€"
                 }
             }
         }
@@ -240,11 +289,11 @@ class ClientDashboardActivity : AppCompatActivity() {
             btnCreer.isEnabled = false
             btnCreer.text = "Création..."
 
-            // CORRECTION: s'assurer que size est un Int et non un objet
+            // Créer la requête produit
             val productRequest = ProductRequest(
                 name = productName,
                 price = price,
-                size = selectedSize, // Int directement
+                size = selectedSize,
                 location = LocationData(
                     city = city,
                     zipcode = zipcode,
@@ -353,7 +402,7 @@ class ClientDashboardActivity : AppCompatActivity() {
             btnCreer.isEnabled = false
             btnCreer.text = "Création..."
 
-            // CORRECTION: s'assurer que tous les champs sont des types simples
+            // Créer la requête service
             val serviceRequest = ServiceRequest(
                 name = typeService,
                 description = description,

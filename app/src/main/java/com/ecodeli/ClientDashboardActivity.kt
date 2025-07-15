@@ -14,6 +14,8 @@ import com.ecodeli.services.RealApiService
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.ecodeli.models.api.LocationData
+
 
 class ClientDashboardActivity : AppCompatActivity() {
 
@@ -199,8 +201,13 @@ class ClientDashboardActivity : AppCompatActivity() {
                             name = productName,
                             price = price,
                             size = selectedSize,
-                            location = location._id
+                            location = LocationData(
+                                city = location.city,
+                                zipcode = location.zipcode,
+                                address = location.address
+                            )
                         )
+
 
                         lifecycleScope.launch {
                             apiService.createProduct(productRequest) { productSuccess, product, productMessage ->

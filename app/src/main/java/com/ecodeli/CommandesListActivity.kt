@@ -78,13 +78,43 @@ class CommandesListActivity : AppCompatActivity() {
         builder.setTitle("Détails de la livraison")
 
         val product = productRequest.product
-        val seller = product?.seller
+        val sellerId = product?.seller as? Int
         val deliveryLocation = productRequest.delivery_location
         val deliveryStatus = productRequest.delivery_status
 
-        val message = """
+        if (sellerId != null) {
+            lifecycleScope.launch {
+                val userInfo = apiService.getSellerById(sellerId)
+                val sellerName = if (userInfo != null) {
+                    "${userInfo.firstname} ${userInfo.name}"
+                } else {
+                    "Non spécifié"
+                }
+
+                val message = """
+                Produit: ${product?.name ?: "Non spécifié"}
+                Vendeur: $sellerName
+                Prix unitaire: ${product?.price ?: 0.0}€
+                Quantité: ${productRequest.amount}
+                Total: ${(product?.price ?: 0.0) * productRequest.amount}€
+                Statut: ${getStatusLabel(deliveryStatus?.name ?: "pending")}
+                Adresse livraison: ${deliveryLocation?.address ?: "Non spécifiée"}
+                Date commande: ${formatDate(productRequest.creation_date)}
+            """.trimIndent()
+
+                builder.setMessage(message)
+                if (deliveryStatus?.name == "delivered") {
+                    builder.setPositiveButton("Valider réception") { _, _ ->
+                        validateCommande(productRequest)
+                    }
+                }
+                builder.setNegativeButton("Fermer", null)
+                builder.show()
+            }
+        } else {
+            val message = """
             Produit: ${product?.name ?: "Non spécifié"}
-            Vendeur: ${seller?.firstname ?: ""} ${seller?.name ?: ""}
+            Vendeur: Non spécifié
             Prix unitaire: ${product?.price ?: 0.0}€
             Quantité: ${productRequest.amount}
             Total: ${(product?.price ?: 0.0) * productRequest.amount}€
@@ -93,18 +123,17 @@ class CommandesListActivity : AppCompatActivity() {
             Date commande: ${formatDate(productRequest.creation_date)}
         """.trimIndent()
 
-        builder.setMessage(message)
-
-        // Ajouter bouton de validation si livraison terminée
-        if (deliveryStatus?.name == "delivered") {
-            builder.setPositiveButton("Valider réception") { _, _ ->
-                validateCommande(productRequest)
+            builder.setMessage(message)
+            if (deliveryStatus?.name == "delivered") {
+                builder.setPositiveButton("Valider réception") { _, _ ->
+                    validateCommande(productRequest)
+                }
             }
+            builder.setNegativeButton("Fermer", null)
+            builder.show()
         }
-
-        builder.setNegativeButton("Fermer", null)
-        builder.show()
     }
+
 
     private fun validateCommande(productRequest: ProductRequestResponse) {
         AlertDialog.Builder(this)

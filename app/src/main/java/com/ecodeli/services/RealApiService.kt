@@ -17,7 +17,7 @@ class RealApiService(private val context: Context) {
         private const val TAG = "RealApiService"
     }
 
-    // ==================== AUTHENTIFICATION (INCHANGÉ) ====================
+    // ==================== AUTHENTIFICATION ====================
 
     suspend fun login(email: String, password: String, callback: (Boolean, String?, String?) -> Unit) {
         try {
@@ -135,9 +135,8 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // ==================== NOUVELLES MÉTHODES POUR PRODUITS ====================
+    // ==================== PRODUITS / COMMANDES ====================
 
-    // Récupérer nos demandes de produits (= nos "commandes")
     suspend fun getCommandes(callback: (Boolean, List<ProductRequestResponse>?, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
@@ -160,144 +159,11 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    // Créer une demande de produit (= "commander")
-    // ATTENTION: Il faut d'abord créer le produit, puis le commander
-    suspend fun createCommande(request: CommandeRequest, callback: (Boolean, ProductRequestResponse?, String?) -> Unit) {
-        try {
-            withContext(Dispatchers.IO) {
-                // D'abord créer une location pour l'adresse de livraison
-                val locationParts = request.adresse_livraison.split(",")
-                val city = locationParts.getOrNull(0)?.trim() ?: "Paris"
-                val zipcode = "75000" // Par défaut
-                val address = request.adresse_livraison
-
-                val locationRequest = LocationRequest(
-                    location = LocationData(city, zipcode, address)
-                )
-                val locationResponse = apiClient.apiService.createLocation(locationRequest)
-
-                if (!locationResponse.isSuccessful) {
-                    withContext(Dispatchers.Main) {
-                        callback(false, null, "Erreur création adresse")
-                    }
-                    return@withContext
-                }
-
-                val location = locationResponse.body()!!
-
-                // Ensuite créer le produit
-                val productRequest = ProductRequest(
-                    name = request.description,
-                    price = request.montant,
-                    size = 2, // Taille M par défaut
-                    location = location._id
-                )
-                val productResponse = apiClient.apiService.createProduct(productRequest)
-
-                if (!productResponse.isSuccessful) {
-                    withContext(Dispatchers.Main) {
-                        callback(false, null, "Erreur création produit")
-                    }
-                    return@withContext
-                }
-
-                val product = productResponse.body()!!
-
-                // Enfin "acheter" le produit (= créer la demande)
-                val buyRequest = ProductRequestRequest(
-                    product = product._id,
-                    amount = 1,
-                    location = location._id
-                )
-                val buyResponse = apiClient.apiService.buyProduct(product._id, buyRequest)
-
-                withContext(Dispatchers.Main) {
-                    if (buyResponse.isSuccessful) {
-                        val productRequestResult = buyResponse.body()
-                        callback(true, productRequestResult, "Commande créée avec succès")
-                    } else {
-                        callback(false, null, "Erreur lors de la commande")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur create commande", e)
-            withContext(Dispatchers.Main) {
-                callback(false, null, "Erreur de réseau: ${e.message}")
-            }
-        }
-    }
-
-    // Valider une commande (pas d'équivalent direct dans l'API actuelle)
     suspend fun validateCommande(commandeId: Int, callback: (Boolean, String?) -> Unit) {
-        // Pour l'instant, on simule une validation réussie
         withContext(Dispatchers.Main) {
             callback(true, "Commande validée avec succès")
         }
     }
-
-    // ==================== NOUVELLES MÉTHODES POUR SERVICES ====================
-
-    // Récupérer nos services (= nos "prestations")
-    suspend fun getPrestations(callback: (Boolean, List<ServiceResponse>?, String?) -> Unit) {
-        try {
-            withContext(Dispatchers.IO) {
-                val response = apiClient.apiService.getServices()
-
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val services = response.body() ?: emptyList()
-                        callback(true, services, null)
-                    } else {
-                        callback(false, null, "Erreur lors du chargement des prestations")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur get prestations", e)
-            withContext(Dispatchers.Main) {
-                callback(false, null, "Erreur de réseau: ${e.message}")
-            }
-        }
-    }
-
-    // Créer un service (= "prestation")
-    suspend fun createPrestation(request: PrestationRequest, callback: (Boolean, ServiceResponse?, String?) -> Unit) {
-        try {
-            withContext(Dispatchers.IO) {
-                val serviceRequest = ServiceRequest(
-                    name = request.titre,
-                    description = request.description,
-                    price = request.tarif ?: 0.0,
-                    date = request.date_prestation
-                )
-                val response = apiClient.apiService.createService(serviceRequest)
-
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val service = response.body()
-                        callback(true, service, "Service créé avec succès")
-                    } else {
-                        callback(false, null, "Erreur lors de la création du service")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur create prestation", e)
-            withContext(Dispatchers.Main) {
-                callback(false, null, "Erreur de réseau: ${e.message}")
-            }
-        }
-    }
-
-    // Annuler un service (pas d'équivalent direct dans l'API actuelle)
-    suspend fun cancelPrestation(prestationId: Int, callback: (Boolean, String?) -> Unit) {
-        // Pour l'instant, on simule une annulation réussie
-        withContext(Dispatchers.Main) {
-            callback(true, "Service annulé avec succès")
-        }
-    }
-
 
     suspend fun createProduct(request: ProductRequest, callback: (Boolean, ProductResponse?, String?) -> Unit) {
         try {
@@ -315,6 +181,30 @@ class RealApiService(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erreur create product", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    // ==================== SERVICES / PRESTATIONS ====================
+
+    suspend fun getPrestations(callback: (Boolean, List<ServiceResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val response = apiClient.apiService.getServices()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val services = response.body() ?: emptyList()
+                        callback(true, services, null)
+                    } else {
+                        callback(false, null, "Erreur lors du chargement des prestations")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get prestations", e)
             withContext(Dispatchers.Main) {
                 callback(false, null, "Erreur de réseau: ${e.message}")
             }
@@ -343,6 +233,14 @@ class RealApiService(private val context: Context) {
         }
     }
 
+    suspend fun cancelPrestation(prestationId: Int, callback: (Boolean, String?) -> Unit) {
+        withContext(Dispatchers.Main) {
+            callback(true, "Service annulé avec succès")
+        }
+    }
+
+    // ==================== LOCATIONS ====================
+
     suspend fun createLocation(city: String, zipcode: String, address: String, callback: (Boolean, LocationInfo?, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
@@ -367,7 +265,8 @@ class RealApiService(private val context: Context) {
             }
         }
     }
-    // ==================== HELPER METHODS (INCHANGÉ) ====================
+
+    // ==================== HELPER METHODS ====================
 
     private fun saveUserInfo(user: UserInfo) {
         prefs.edit().apply {
@@ -387,30 +286,18 @@ class RealApiService(private val context: Context) {
             apply()
         }
     }
+    suspend fun getSellerById(sellerId: Int): UserInfo? {
+        return try {
+            val response = apiClient.apiService.getUser(sellerId)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
 
     private fun clearUserInfo() {
         prefs.edit().clear().apply()
     }
 }
-
-// ==================== MODÈLES DE COMPATIBILITÉ ====================
-// Pour garder la compatibilité avec l'ancien code
-
-data class CommandeRequest(
-    val commercant: String,
-    val description: String,
-    val montant: Double,
-    val adresse_livraison: String,
-    val notes: String? = null
-)
-
-data class PrestationRequest(
-    val titre: String,
-    val description: String,
-    val tarif: Double? = 0.0,
-    val date_prestation: String,
-    val duree_estimee: Int? = 60,
-    val adresse: String,
-    val notes: String? = null
-)
-

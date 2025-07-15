@@ -6,7 +6,7 @@ data class ProductRequest(
     val name: String,        // Nom du produit
     val price: Double,       // Prix
     val size: Int,          // ID de la taille (1=S, 2=M, 3=L, etc.)
-    val location: Int       // ID de la location du vendeur
+    val location: LocationData
 )
 
 // Réponse quand on récupère un produit
@@ -15,8 +15,8 @@ data class ProductResponse(
     val name: String,
     val image: String?,
     val price: Double,
-    val size: PackageSize?,      // Taille du produit
-    val seller: UserInfo?,       // Vendeur
+    val size: Int,      // Taille du produit
+    val seller: Int,       // Vendeur
     val location: LocationInfo?  // Lieu de récupération
 )
 
@@ -101,4 +101,37 @@ data class LocationData(
     val city: String,
     val zipcode: String,
     val address: String
+)
+
+// ==================== MODÈLES DE COMPATIBILITÉ ====================
+// Pour garder la compatibilité avec l'ancien code
+
+data class CommandeRequest(
+    val commercant: String,
+    val description: String,
+    val montant: Double,
+    val adresse_livraison: String,
+    val notes: String? = null
+)
+
+data class PrestationRequest(
+    val titre: String,
+    val description: String,
+    val tarif: Double? = 0.0,
+    val date_prestation: String,
+    val duree_estimee: Int? = 60,
+    val adresse: String,
+    val notes: String? = null
+)
+
+// ==================== ANCIENS MODÈLES (pour compatibilité) ====================
+data class PrestationResponse(
+    val _id: Int,
+    val titre: String,
+    val description: String,
+    val tarif: Double,
+    val status: String,
+    val adresse: String,
+    val duree_estimee: Int,
+    val date_prestation: String
 )

@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ecodeli.adapters.PrestationAdapterReal
-import com.ecodeli.models.api.PrestationResponse
+import com.ecodeli.models.api.ServiceResponse
 import com.ecodeli.services.RealApiService
 import kotlinx.coroutines.launch
 
@@ -20,7 +20,7 @@ class PrestationsListActivity : AppCompatActivity() {
     private lateinit var rvPrestations: RecyclerView
     private lateinit var prestationAdapter: PrestationAdapterReal
 
-    private val prestationsList = mutableListOf<PrestationResponse>()
+    private val prestationsList = mutableListOf<ServiceResponse>()
     private var userId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,33 +73,33 @@ class PrestationsListActivity : AppCompatActivity() {
         }
     }
 
-    private fun showPrestationDetails(prestation: PrestationResponse) {
+    private fun showPrestationDetails(prestation: ServiceResponse) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Détails de la prestation")
 
+        val status = if (prestation.actor != null) "Assigné" else "En attente"
+        val actorInfo = prestation.actor?.let { "${it.firstname} ${it.name}" } ?: "Aucun prestataire assigné"
+
         val message = """
-            Service: ${prestation.titre}
+            Service: ${prestation.name}
             Description: ${prestation.description}
-            Tarif: ${prestation.tarif}€
-            Statut: ${getStatusLabel(prestation.status)}
-            Adresse: ${prestation.adresse}
-            Durée estimée: ${prestation.duree_estimee} minutes
-            Date: ${formatDate(prestation.date_prestation)}
+            Tarif: ${prestation.price}€
+            Statut: $status
+            Prestataire: $actorInfo
+            Date: ${formatDate(prestation.date)}
+            Date création: ${formatDate(prestation.creation_date)}
         """.trimIndent()
 
         builder.setMessage(message)
 
         // Actions selon le statut
-        when (prestation.status) {
-            "demandee" -> {
-                builder.setPositiveButton("Annuler la demande") { _, _ ->
-                    cancelPrestation(prestation)
-                }
+        if (prestation.actor == null) {
+            builder.setPositiveButton("Annuler la demande") { _, _ ->
+                cancelPrestation(prestation)
             }
-            "terminee" -> {
-                builder.setPositiveButton("Laisser un avis") { _, _ ->
-                    Toast.makeText(this, "Fonction d'évaluation - À implémenter", Toast.LENGTH_SHORT).show()
-                }
+        } else {
+            builder.setPositiveButton("Contacter prestataire") { _, _ ->
+                Toast.makeText(this, "Fonction de contact - À implémenter", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -107,7 +107,7 @@ class PrestationsListActivity : AppCompatActivity() {
         builder.show()
     }
 
-    private fun cancelPrestation(prestation: PrestationResponse) {
+    private fun cancelPrestation(prestation: ServiceResponse) {
         AlertDialog.Builder(this)
             .setTitle("Annuler la prestation")
             .setMessage("Êtes-vous sûr de vouloir annuler cette prestation ?")
@@ -131,17 +131,6 @@ class PrestationsListActivity : AppCompatActivity() {
             }
             .setNegativeButton("Non", null)
             .show()
-    }
-
-    private fun getStatusLabel(status: String): String {
-        return when (status) {
-            "demandee" -> "Demandée"
-            "acceptee" -> "Acceptée"
-            "en_cours" -> "En cours"
-            "terminee" -> "Terminée"
-            "annulee" -> "Annulée"
-            else -> status
-        }
     }
 
     private fun formatDate(dateString: String): String {

@@ -33,20 +33,22 @@ interface ApiService {
     @GET("products/{id}")
     suspend fun getProduct(@Path("id") productId: Int): Response<ProductResponse>
 
+    // Création d'un produit (en tant que vendeur)
     @POST("products")
     suspend fun createProduct(@Body request: ProductRequest): Response<ProductResponse>
 
-    // ==================== DEMANDES DE PRODUITS (ex-commandes) ====================
+    // ==================== DEMANDES DE PRODUITS (commandes) ====================
     @GET("products/requests")
     suspend fun getProductRequests(): Response<List<ProductRequestResponse>>
 
     @GET("products/requests/{id}")
     suspend fun getProductRequest(@Path("id") requestId: Int): Response<ProductRequestResponse>
 
+    // Acheter un produit existant (créer une demande)
     @POST("products/{id}/buy")
     suspend fun buyProduct(@Path("id") productId: Int, @Body request: ProductRequestRequest): Response<ProductRequestResponse>
 
-    // ==================== SERVICES (ex-prestations) ====================
+    // ==================== SERVICES (prestations) ====================
     @GET("services")
     suspend fun getServices(): Response<List<ServiceResponse>>
 

@@ -7,7 +7,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.ecodeli.services.ApiService
+import androidx.lifecycle.lifecycleScope
+import com.ecodeli.services.RealApiService
+import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -23,14 +25,14 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var etBirthDate: EditText
 
     private lateinit var prefs: SharedPreferences
-    private lateinit var apiService: ApiService
+    private lateinit var apiService: RealApiService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
         prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
-        apiService = ApiService()
+        apiService = RealApiService(this)
 
         initViews()
         setupClickListeners()
@@ -121,19 +123,19 @@ class RegisterActivity : AppCompatActivity() {
             "birthDate" to birthDate
         )
 
-        apiService.register(userData) { success, message ->
-            runOnUiThread {
+        lifecycleScope.launch {
+            apiService.register(userData) { success, message ->
                 btnRegister.isEnabled = true
                 btnRegister.text = "S'inscrire"
 
                 if (success) {
-                    Toast.makeText(this, "Inscription réussie ! Veuillez vous connecter.", Toast.LENGTH_LONG).show()
-                    val intent = Intent(this, LoginActivity::class.java)
+                    Toast.makeText(this@RegisterActivity, "Inscription réussie ! Veuillez vous connecter.", Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
                     intent.putExtra("email", email)
                     startActivity(intent)
                     finish()
                 } else {
-                    Toast.makeText(this, message ?: "Erreur d'inscription", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@RegisterActivity, message ?: "Erreur d'inscription", Toast.LENGTH_SHORT).show()
                 }
             }
         }

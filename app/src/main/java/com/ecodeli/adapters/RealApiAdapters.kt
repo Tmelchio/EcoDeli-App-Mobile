@@ -6,13 +6,13 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.ecodeli.R
-import com.ecodeli.models.api.CommandeResponse
-import com.ecodeli.models.api.PrestationResponse
+import com.ecodeli.models.api.ProductRequestResponse
+import com.ecodeli.models.api.ServiceResponse
 
-// ==================== ADAPTER COMMANDES API ====================
+// ==================== ADAPTER PRODUCT REQUESTS (ex-commandes) ====================
 class CommandeAdapterReal(
-    private val commandes: List<CommandeResponse>,
-    private val onItemClick: (CommandeResponse) -> Unit
+    private val productRequests: List<ProductRequestResponse>,
+    private val onItemClick: (ProductRequestResponse) -> Unit
 ) : RecyclerView.Adapter<CommandeAdapterReal.CommandeViewHolder>() {
 
     class CommandeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -32,46 +32,57 @@ class CommandeAdapterReal(
     }
 
     override fun onBindViewHolder(holder: CommandeViewHolder, position: Int) {
-        val commande = commandes[position]
+        val productRequest = productRequests[position]
+        val product = productRequest.product
+        val seller = product?.seller
 
-        holder.tvCommercant.text = commande.commercant
-        holder.tvDescription.text = commande.description
-        holder.tvMontant.text = String.format("%.2f€", commande.montant)
-        holder.tvStatus.text = getStatusLabel(commande.status)
-        holder.tvDate.text = formatDate(commande.date_commande)
+        // Utiliser les données du produit et vendeur
+        holder.tvCommercant.text = if (seller != null) {
+            "${seller.firstname} ${seller.name}"
+        } else {
+            "Vendeur"
+        }
+
+        holder.tvDescription.text = product?.name ?: "Produit"
+
+        val totalPrice = (product?.price ?: 0.0) * productRequest.amount
+        holder.tvMontant.text = String.format("%.2f€", totalPrice)
+
+        holder.tvStatus.text = getStatusLabel(productRequest.delivery_status?.name ?: "pending")
+        holder.tvDate.text = formatDate(productRequest.creation_date)
         holder.tvTypeService.text = "📦 Livraison"
 
         // Masquer le badge urgent par défaut
         holder.tvUrgent?.visibility = View.GONE
 
         // Couleur du statut
-        holder.tvStatus.setTextColor(getStatusColor(holder.itemView.context, commande.status))
+        holder.tvStatus.setTextColor(getStatusColor(holder.itemView.context, productRequest.delivery_status?.name ?: "pending"))
 
         holder.itemView.setOnClickListener {
-            onItemClick(commande)
+            onItemClick(productRequest)
         }
     }
 
-    override fun getItemCount() = commandes.size
+    override fun getItemCount() = productRequests.size
 
     private fun getStatusLabel(status: String): String {
         return when (status) {
-            "en_attente" -> "En attente"
-            "en_livraison" -> "En livraison"
-            "livree" -> "Livrée"
-            "validee" -> "Validée"
-            "annulee" -> "Annulée"
+            "pending" -> "En attente"
+            "accepted" -> "Acceptée"
+            "in_progress" -> "En cours"
+            "delivered" -> "Livrée"
+            "cancelled" -> "Annulée"
             else -> status
         }
     }
 
     private fun getStatusColor(context: android.content.Context, status: String): Int {
         return when (status) {
-            "en_attente" -> context.getColor(android.R.color.holo_orange_dark)
-            "en_livraison" -> context.getColor(android.R.color.holo_blue_dark)
-            "livree" -> context.getColor(R.color.ecodeli_green)
-            "validee" -> context.getColor(android.R.color.darker_gray)
-            "annulee" -> context.getColor(android.R.color.holo_red_dark)
+            "pending" -> context.getColor(android.R.color.holo_orange_dark)
+            "accepted" -> context.getColor(android.R.color.holo_blue_dark)
+            "in_progress" -> context.getColor(android.R.color.holo_blue_dark)
+            "delivered" -> context.getColor(R.color.ecodeli_green)
+            "cancelled" -> context.getColor(android.R.color.holo_red_dark)
             else -> context.getColor(android.R.color.black)
         }
     }
@@ -91,10 +102,10 @@ class CommandeAdapterReal(
     }
 }
 
-// ==================== ADAPTER PRESTATIONS API ====================
+// ==================== ADAPTER SERVICES (ex-prestations) ====================
 class PrestationAdapterReal(
-    private val prestations: List<PrestationResponse>,
-    private val onItemClick: (PrestationResponse) -> Unit
+    private val services: List<ServiceResponse>,
+    private val onItemClick: (ServiceResponse) -> Unit
 ) : RecyclerView.Adapter<PrestationAdapterReal.PrestationViewHolder>() {
 
     class PrestationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -113,46 +124,29 @@ class PrestationAdapterReal(
     }
 
     override fun onBindViewHolder(holder: PrestationViewHolder, position: Int) {
-        val prestation = prestations[position]
+        val service = services[position]
 
-        holder.tvTitre.text = prestation.titre
-        holder.tvDescription.text = prestation.description
-        holder.tvTarif.text = String.format("%.2f€", prestation.tarif)
-        holder.tvStatus.text = getStatusLabel(prestation.status)
-        holder.tvDate.text = formatDate(prestation.date_prestation)
-        holder.tvDuree.text = "${prestation.duree_estimee} min"
+        holder.tvTitre.text = service.name
+        holder.tvDescription.text = service.description
+        holder.tvTarif.text = String.format("%.2f€", service.price)
+        holder.tvStatus.text = if (service.actor != null) "Assigné" else "En attente"
+        holder.tvDate.text = formatDate(service.date)
+        holder.tvDuree.text = "Service" // Pas de durée dans le modèle Service
 
         // Couleur du statut
-        holder.tvStatus.setTextColor(getStatusColor(holder.itemView.context, prestation.status))
+        val statusColor = if (service.actor != null) {
+            holder.itemView.context.getColor(R.color.ecodeli_green)
+        } else {
+            holder.itemView.context.getColor(android.R.color.holo_orange_dark)
+        }
+        holder.tvStatus.setTextColor(statusColor)
 
         holder.itemView.setOnClickListener {
-            onItemClick(prestation)
+            onItemClick(service)
         }
     }
 
-    override fun getItemCount() = prestations.size
-
-    private fun getStatusLabel(status: String): String {
-        return when (status) {
-            "demandee" -> "Demandée"
-            "acceptee" -> "Acceptée"
-            "en_cours" -> "En cours"
-            "terminee" -> "Terminée"
-            "annulee" -> "Annulée"
-            else -> status
-        }
-    }
-
-    private fun getStatusColor(context: android.content.Context, status: String): Int {
-        return when (status) {
-            "demandee" -> context.getColor(android.R.color.holo_orange_dark)
-            "acceptee" -> context.getColor(android.R.color.holo_blue_dark)
-            "en_cours" -> context.getColor(R.color.ecodeli_green)
-            "terminee" -> context.getColor(android.R.color.darker_gray)
-            "annulee" -> context.getColor(android.R.color.holo_red_dark)
-            else -> context.getColor(android.R.color.black)
-        }
-    }
+    override fun getItemCount() = services.size
 
     private fun formatDate(dateString: String): String {
         return try {

@@ -26,29 +26,40 @@ interface ApiService {
     @PUT("users/{id}")
     suspend fun updateUser(@Path("id") userId: Int, @Body user: Map<String, Any>): Response<UserInfo>
 
-    // ==================== COMMANDES ====================
-    @GET("commandes")
-    suspend fun getCommandes(): Response<List<CommandeResponse>>
+    // ==================== PRODUITS ====================
+    @GET("products")
+    suspend fun getProducts(): Response<List<ProductResponse>>
 
-    @GET("commandes/{id}")
-    suspend fun getCommande(@Path("id") commandeId: Int): Response<CommandeResponse>
+    @GET("products/{id}")
+    suspend fun getProduct(@Path("id") productId: Int): Response<ProductResponse>
 
-    @POST("commandes")
-    suspend fun createCommande(@Body request: CommandeRequest): Response<CommandeResponse>
+    @POST("products")
+    suspend fun createProduct(@Body request: ProductRequest): Response<ProductResponse>
 
-    @POST("commandes/{id}/validate")
-    suspend fun validateCommande(@Path("id") commandeId: Int): Response<ValidationResponse>
+    // ==================== DEMANDES DE PRODUITS (ex-commandes) ====================
+    @GET("products/requests")
+    suspend fun getProductRequests(): Response<List<ProductRequestResponse>>
 
-    // ==================== PRESTATIONS ====================
-    @GET("prestations")
-    suspend fun getPrestations(): Response<List<PrestationResponse>>
+    @GET("products/requests/{id}")
+    suspend fun getProductRequest(@Path("id") requestId: Int): Response<ProductRequestResponse>
 
-    @GET("prestations/{id}")
-    suspend fun getPrestation(@Path("id") prestationId: Int): Response<PrestationResponse>
+    @POST("products/{id}/buy")
+    suspend fun buyProduct(@Path("id") productId: Int, @Body request: ProductRequestRequest): Response<ProductRequestResponse>
 
-    @POST("prestations")
-    suspend fun createPrestation(@Body request: PrestationRequest): Response<PrestationResponse>
+    // ==================== SERVICES (ex-prestations) ====================
+    @GET("services")
+    suspend fun getServices(): Response<List<ServiceResponse>>
 
-    @POST("prestations/{id}/cancel")
-    suspend fun cancelPrestation(@Path("id") prestationId: Int): Response<ValidationResponse>
+    @GET("services/{id}")
+    suspend fun getService(@Path("id") serviceId: Int): Response<ServiceResponse>
+
+    @POST("services")
+    suspend fun createService(@Body request: ServiceRequest): Response<ServiceResponse>
+
+    // ==================== LOCATIONS ====================
+    @GET("locations")
+    suspend fun getLocations(): Response<List<LocationInfo>>
+
+    @POST("locations")
+    suspend fun createLocation(@Body request: LocationRequest): Response<LocationInfo>
 }

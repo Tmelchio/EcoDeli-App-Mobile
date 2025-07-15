@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ecodeli.adapters.CommandeAdapterReal
-import com.ecodeli.models.api.CommandeResponse
+import com.ecodeli.models.api.ProductRequestResponse
 import com.ecodeli.services.RealApiService
 import kotlinx.coroutines.launch
 
@@ -20,7 +20,7 @@ class CommandesListActivity : AppCompatActivity() {
     private lateinit var rvCommandes: RecyclerView
     private lateinit var commandeAdapter: CommandeAdapterReal
 
-    private val commandesList = mutableListOf<CommandeResponse>()
+    private val commandesList = mutableListOf<ProductRequestResponse>()
     private var userId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,8 +45,8 @@ class CommandesListActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        commandeAdapter = CommandeAdapterReal(commandesList) { commande ->
-            showCommandeDetails(commande)
+        commandeAdapter = CommandeAdapterReal(commandesList) { productRequest ->
+            showCommandeDetails(productRequest)
         }
 
         rvCommandes.apply {
@@ -57,11 +57,11 @@ class CommandesListActivity : AppCompatActivity() {
 
     private fun loadCommandes() {
         lifecycleScope.launch {
-            apiService.getCommandes { success, commandes, message ->
+            apiService.getCommandes { success, productRequests, message ->
                 runOnUiThread {
-                    if (success && commandes != null) {
+                    if (success && productRequests != null) {
                         commandesList.clear()
-                        commandesList.addAll(commandes)
+                        commandesList.addAll(productRequests)
                         commandeAdapter.notifyDataSetChanged()
                     } else {
                         Toast.makeText(this@CommandesListActivity,
@@ -73,25 +73,32 @@ class CommandesListActivity : AppCompatActivity() {
         }
     }
 
-    private fun showCommandeDetails(commande: CommandeResponse) {
+    private fun showCommandeDetails(productRequest: ProductRequestResponse) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Détails de la livraison")
 
+        val product = productRequest.product
+        val seller = product?.seller
+        val deliveryLocation = productRequest.delivery_location
+        val deliveryStatus = productRequest.delivery_status
+
         val message = """
-            Commerçant: ${commande.commercant}
-            Description: ${commande.description}
-            Montant: ${commande.montant}€
-            Statut: ${getStatusLabel(commande.status)}
-            Adresse: ${commande.adresse_livraison}
-            Date: ${formatDate(commande.date_commande)}
+            Produit: ${product?.name ?: "Non spécifié"}
+            Vendeur: ${seller?.firstname ?: ""} ${seller?.name ?: ""}
+            Prix unitaire: ${product?.price ?: 0.0}€
+            Quantité: ${productRequest.amount}
+            Total: ${(product?.price ?: 0.0) * productRequest.amount}€
+            Statut: ${getStatusLabel(deliveryStatus?.name ?: "pending")}
+            Adresse livraison: ${deliveryLocation?.address ?: "Non spécifiée"}
+            Date commande: ${formatDate(productRequest.creation_date)}
         """.trimIndent()
 
         builder.setMessage(message)
 
         // Ajouter bouton de validation si livraison terminée
-        if (commande.status == "livree") {
+        if (deliveryStatus?.name == "delivered") {
             builder.setPositiveButton("Valider réception") { _, _ ->
-                validateCommande(commande)
+                validateCommande(productRequest)
             }
         }
 
@@ -99,13 +106,13 @@ class CommandesListActivity : AppCompatActivity() {
         builder.show()
     }
 
-    private fun validateCommande(commande: CommandeResponse) {
+    private fun validateCommande(productRequest: ProductRequestResponse) {
         AlertDialog.Builder(this)
             .setTitle("Valider la livraison")
             .setMessage("Confirmer la réception de cette livraison ?")
             .setPositiveButton("Valider") { _, _ ->
                 lifecycleScope.launch {
-                    apiService.validateCommande(commande._id) { success, message ->
+                    apiService.validateCommande(productRequest._id) { success, message ->
                         runOnUiThread {
                             if (success) {
                                 Toast.makeText(this@CommandesListActivity,
@@ -127,11 +134,11 @@ class CommandesListActivity : AppCompatActivity() {
 
     private fun getStatusLabel(status: String): String {
         return when (status) {
-            "en_attente" -> "En attente"
-            "en_livraison" -> "En livraison"
-            "livree" -> "Livrée"
-            "validee" -> "Validée"
-            "annulee" -> "Annulée"
+            "pending" -> "En attente"
+            "accepted" -> "Acceptée"
+            "in_progress" -> "En cours"
+            "delivered" -> "Livrée"
+            "cancelled" -> "Annulée"
             else -> status
         }
     }

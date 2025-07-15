@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Demander une prestation"
+        android:text="Créer un Produit"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -23,20 +23,20 @@
         android:background="@drawable/rounded_light_green"
         android:padding="16dp">
 
-        <!-- Type de prestation -->
+        <!-- Nom du produit -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Type de prestation"
+            android:text="Nom du produit"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvTypePrestation"
+        <EditText
+            android:id="@+id/etProductName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Transport de personne"
+            android:hint="ex: iPhone 15, MacBook Air, Livre Python..."
             android:textColor="#000000"
             android:textSize="14sp"
             android:background="@drawable/edittext_background"
@@ -45,43 +45,62 @@
             android:layout_marginBottom="12dp"
             android:layout_marginTop="4dp" />
 
-        <!-- Description -->
+        <!-- Prix -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Description détaillée"
+            android:text="Prix"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/etDescription"
+            android:id="@+id/etPrice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Décrivez votre demande en détail..."
+            android:hint="ex: 25.50"
+            android:inputType="numberDecimal"
             android:textColor="#000000"
             android:textSize="14sp"
             android:background="@drawable/edittext_background"
             android:paddingVertical="8dp"
             android:paddingHorizontal="12dp"
+            android:layout_marginBottom="12dp"
+            android:layout_marginTop="4dp" />
+
+        <!-- Taille -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Taille du produit"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerSize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:layout_marginTop="4dp"
-            android:minLines="3" />
+            android:background="@drawable/edittext_background"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="12dp" />
 
-        <!-- Adresse -->
+        <!-- Localisation (où récupérer) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Adresse / Lieu"
+            android:text="Ville"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/etAdresse"
+            android:id="@+id/etCity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Adresse où se déroulera la prestation"
+            android:hint="ex: Paris"
             android:textColor="#000000"
             android:textSize="14sp"
             android:background="@drawable/edittext_background"
@@ -90,42 +109,19 @@
             android:layout_marginBottom="12dp"
             android:layout_marginTop="4dp" />
 
-        <!-- Date souhaitée -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Date souhaitée"
+            android:text="Code postal"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/etDateSouhaitee"
+            android:id="@+id/etZipcode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="jj/mm/aaaa"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:background="@drawable/edittext_background"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="12dp"
-            android:layout_marginBottom="12dp"
-            android:layout_marginTop="4dp" />
-
-        <!-- Durée estimée -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Durée estimée (minutes)"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etDureeEstimee"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="ex: 120"
+            android:hint="ex: 75001"
             android:inputType="number"
             android:textColor="#000000"
             android:textSize="14sp"
@@ -135,28 +131,27 @@
             android:layout_marginBottom="12dp"
             android:layout_marginTop="4dp" />
 
-        <!-- Budget -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Budget maximal"
+            android:text="Adresse de récupération"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/etBudget"
+            android:id="@+id/etAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="ex: 50.00"
-            android:inputType="numberDecimal"
+            android:hint="ex: 123 Rue de la Paix"
             android:textColor="#000000"
             android:textSize="14sp"
             android:background="@drawable/edittext_background"
             android:paddingVertical="8dp"
             android:paddingHorizontal="12dp"
             android:layout_marginBottom="16dp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:minLines="2" />
 
         <!-- Boutons -->
         <LinearLayout

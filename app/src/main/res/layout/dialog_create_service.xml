@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Nouvelle Commande"
+        android:text="Demander un service"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -23,29 +23,7 @@
         android:background="@drawable/rounded_light_green"
         android:padding="16dp">
 
-        <!-- Commerçant -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Commerçant / Magasin"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etCommercant"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="ex: Pharmacie Central, Boulangerie Paul..."
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:background="@drawable/edittext_background"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="12dp"
-            android:layout_marginBottom="12dp"
-            android:layout_marginTop="4dp" />
-
-        <!-- Type de service FIXE -->
+        <!-- Type de service -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -55,58 +33,10 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvTypeService"
+            android:id="@+id/tvServiceType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📦 Livraison"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:background="@drawable/edittext_background"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="12dp"
-            android:layout_marginBottom="12dp"
-            android:layout_marginTop="4dp"
-            android:gravity="center_vertical" />
-
-        <!-- Description -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Description de la commande"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="ex: Médicaments, courses alimentaires, colis..."
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:background="@drawable/edittext_background"
-            android:paddingVertical="8dp"
-            android:paddingHorizontal="12dp"
-            android:layout_marginBottom="12dp"
-            android:layout_marginTop="4dp"
-            android:minLines="2" />
-
-        <!-- Montant -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Montant de la commande"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etMontant"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="ex: 25.50"
-            android:inputType="numberDecimal"
+            android:text="Transport de personne"
             android:textColor="#000000"
             android:textSize="14sp"
             android:background="@drawable/edittext_background"
@@ -115,20 +45,20 @@
             android:layout_marginBottom="12dp"
             android:layout_marginTop="4dp" />
 
-        <!-- Adresse de livraison -->
+        <!-- Description -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Adresse de livraison"
+            android:text="Description détaillée"
             android:textColor="#000000"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <EditText
-            android:id="@+id/etAdresse"
+            android:id="@+id/etServiceDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="ex: 123 Rue de la Paix, 75001 Paris"
+            android:hint="Décrivez votre demande en détail..."
             android:textColor="#000000"
             android:textSize="14sp"
             android:background="@drawable/edittext_background"
@@ -136,32 +66,52 @@
             android:paddingHorizontal="12dp"
             android:layout_marginBottom="12dp"
             android:layout_marginTop="4dp"
-            android:minLines="2" />
+            android:minLines="3" />
 
-        <!-- Options -->
-        <LinearLayout
+        <!-- Date souhaitée -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Date souhaitée"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etServiceDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
+            android:hint="jj/mm/aaaa"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:background="@drawable/edittext_background"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="12dp"
+            android:layout_marginTop="4dp" />
 
-            <CheckBox
-                android:id="@+id/cbUrgent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Livraison urgente"
-                android:textColor="#000000"
-                android:textSize="12sp"
-                android:layout_marginEnd="16dp" />
+        <!-- Budget proposé (optionnel) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Budget proposé (optionnel)"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-            <CheckBox
-                android:id="@+id/cbAssurance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Assurance colis"
-                android:textColor="#000000"
-                android:textSize="12sp" />
-        </LinearLayout>
+        <EditText
+            android:id="@+id/etServicePrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="ex: 50.00"
+            android:inputType="numberDecimal"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:background="@drawable/edittext_background"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="16dp"
+            android:layout_marginTop="4dp" />
 
         <!-- Boutons -->
         <LinearLayout

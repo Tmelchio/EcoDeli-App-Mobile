@@ -45,7 +45,12 @@ class NfcRegisterActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        val tag: Tag? = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        }
         if (tag != null) {
             writeUserDataToTag(tag)
         }
@@ -53,19 +58,26 @@ class NfcRegisterActivity : AppCompatActivity() {
 
     private fun writeUserDataToTag(tag: Tag) {
         try {
-            // Récupérer les données utilisateur stockées
+            // Récupérer uniquement l'ID utilisateur
             val prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
             val userId = prefs.getString("user_id", "") ?: ""
-            val email = prefs.getString("user_email", "") ?: ""
-            val token = prefs.getString("auth_token", "") ?: ""
 
-            if (userId.isEmpty() || email.isEmpty()) {
-                Toast.makeText(this, "Données utilisateur manquantes", Toast.LENGTH_SHORT).show()
+            if (userId.isEmpty()) {
+                Toast.makeText(this, "ID utilisateur manquant", Toast.LENGTH_SHORT).show()
                 return
             }
 
-            // Créer les données NFC
-            val userData = nfcManager.createUserNfcData(userId, email, token)
+            // Vider le badge avant d'enregistrer
+            Toast.makeText(this, "Préparation du badge...", Toast.LENGTH_SHORT).show()
+            val clearSuccess = nfcManager.clearNfcTag(tag)
+            
+            if (!clearSuccess) {
+                Toast.makeText(this, "Erreur lors de la préparation du badge", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Créer les données NFC avec uniquement l'ID utilisateur
+            val userData = nfcManager.createUserNfcData(userId)
 
             // Écrire sur la carte
             val success = nfcManager.writeUserDataToTag(tag, userData)

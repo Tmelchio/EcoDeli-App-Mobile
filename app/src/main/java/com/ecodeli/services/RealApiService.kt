@@ -549,4 +549,157 @@ class RealApiService(private val context: Context) {
         Log.d(TAG, "Nettoyage des données utilisateur")
         prefs.edit().clear().apply()
     }
+
+    suspend fun loginWithUserId(userId: String, callback: (Boolean, String?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "=== DEBUT CONNEXION NFC ===")
+                Log.d(TAG, "Tentative de connexion NFC pour l'utilisateur: $userId")
+                
+                // Convertir l'ID en Int pour l'endpoint /api/users
+                val userIdInt = try {
+                    userId.toInt()
+                } catch (e: NumberFormatException) {
+                    Log.e(TAG, "Impossible de convertir l'ID en Int: $userId", e)
+                    withContext(Dispatchers.Main) {
+                        callback(false, null, "ID utilisateur invalide (format)")
+                    }
+                    return@withContext
+                }
+                
+                Log.d(TAG, "ID converti en Int: $userIdInt")
+                Log.d(TAG, "Utilisation de l'endpoint /api/users/$userIdInt")
+                
+                // Utiliser l'endpoint /api/users/{id} directement
+                val response = apiClient.apiService.getUser(userIdInt)
+                
+                Log.d(TAG, "Réponse API reçue. Code: ${response.code()}")
+                Log.d(TAG, "Réponse API successful: ${response.isSuccessful}")
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val userInfo = response.body()
+                        Log.d(TAG, "Corps de la réponse: $userInfo")
+                        
+                        if (userInfo != null) {
+                            Log.d(TAG, "Connexion NFC réussie pour l'utilisateur: ${userInfo.email}")
+                            
+                            // Générer un token temporaire pour la session NFC
+                            val tempToken = "nfc_${System.currentTimeMillis()}_${userId}"
+                            apiClient.saveToken(tempToken)
+                            
+                            // Sauvegarder les infos utilisateur
+                            saveUserInfo(userInfo)
+                            
+                            callback(true, "client", "Connexion NFC réussie")
+                        } else {
+                            Log.e(TAG, "Corps de réponse null")
+                            callback(false, null, "Réponse vide du serveur")
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Erreur connexion NFC: ${response.code()} - $errorBody")
+                        val errorMsg = when (response.code()) {
+                            404 -> "Utilisateur non trouvé (ID: $userId)"
+                            401 -> "Non autorisé"
+                            403 -> "Accès refusé"
+                            500 -> "Erreur serveur"
+                            else -> "Erreur de connexion NFC (${response.code()})"
+                        }
+                        callback(false, null, errorMsg)
+                    }
+                }
+                Log.d(TAG, "=== FIN CONNEXION NFC ===")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur de connexion NFC", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    // Méthode de test pour vérifier si un utilisateur existe
+    suspend fun testGetUser(userId: Int, callback: (Boolean, String) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "=== TEST UTILISATEUR ID=$userId ===")
+                
+                // Test 1: Essayer getUser
+                try {
+                    val response = apiClient.apiService.getUser(userId)
+                    Log.d(TAG, "Test getUser - Code: ${response.code()}, Success: ${response.isSuccessful}")
+                    
+                    if (response.isSuccessful) {
+                        val user = response.body()
+                        Log.d(TAG, "Test getUser - Utilisateur trouvé: $user")
+                        withContext(Dispatchers.Main) {
+                            callback(true, "getUser: ${user?.email ?: "email non disponible"}")
+                        }
+                        return@withContext
+                    } else {
+                        Log.d(TAG, "Test getUser - Erreur: ${response.errorBody()?.string()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Test getUser - Exception: ${e.message}")
+                }
+                
+                // Test 2: Essayer getUserById
+                try {
+                    val response = apiClient.apiService.getUserById(userId.toString())
+                    Log.d(TAG, "Test getUserById - Code: ${response.code()}, Success: ${response.isSuccessful}")
+                    
+                    if (response.isSuccessful) {
+                        val user = response.body()
+                        Log.d(TAG, "Test getUserById - Utilisateur trouvé: $user")
+                        withContext(Dispatchers.Main) {
+                            callback(true, "getUserById: ${user?.email ?: "email non disponible"}")
+                        }
+                        return@withContext
+                    } else {
+                        Log.d(TAG, "Test getUserById - Erreur: ${response.errorBody()?.string()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Test getUserById - Exception: ${e.message}")
+                }
+                
+                // Test 3: Lister tous les utilisateurs
+                try {
+                    val response = apiClient.apiService.getUsers()
+                    Log.d(TAG, "Test getUsers - Code: ${response.code()}, Success: ${response.isSuccessful}")
+                    
+                    if (response.isSuccessful) {
+                        val users = response.body()
+                        Log.d(TAG, "Test getUsers - Nombre d'utilisateurs: ${users?.size ?: 0}")
+                        
+                        val userIds = users?.map { "ID=${it._id}, Email=${it.email}" }?.joinToString("\n") ?: "Aucun utilisateur"
+                        Log.d(TAG, "Test getUsers - Liste des utilisateurs:\n$userIds")
+                        
+                        val userExists = users?.any { it._id == userId } ?: false
+                        withContext(Dispatchers.Main) {
+                            if (userExists) {
+                                callback(true, "Trouvé dans getUsers")
+                            } else {
+                                callback(false, "Non trouvé dans getUsers. IDs disponibles: ${users?.map { it._id }}")
+                            }
+                        }
+                        return@withContext
+                    } else {
+                        Log.d(TAG, "Test getUsers - Erreur: ${response.errorBody()?.string()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Test getUsers - Exception: ${e.message}")
+                }
+                
+                withContext(Dispatchers.Main) {
+                    callback(false, "Aucun endpoint n'a trouvé l'utilisateur")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors du test utilisateur", e)
+            withContext(Dispatchers.Main) {
+                callback(false, "Erreur: ${e.message}")
+            }
+        }
+    }
 }

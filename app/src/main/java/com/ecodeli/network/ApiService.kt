@@ -10,6 +10,9 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
+    @POST("auth/login-by-id")
+    suspend fun loginById(@Body request: LoginByIdRequest): Response<LoginResponse>
+
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 
@@ -22,6 +25,9 @@ interface ApiService {
     // ==================== UTILISATEURS ====================
     @GET("users/{id}")
     suspend fun getUser(@Path("id") userId: Int): Response<UserInfo>
+
+    @GET("users/by-id/{id}")
+    suspend fun getUserById(@Path("id") userId: String): Response<UserInfo>
 
     @PUT("users/{id}")
     suspend fun updateUser(@Path("id") userId: Int, @Body user: Map<String, Any>): Response<UserInfo>

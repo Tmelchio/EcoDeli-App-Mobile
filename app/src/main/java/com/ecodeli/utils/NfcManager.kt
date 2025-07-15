@@ -16,14 +16,12 @@ class NfcManager(private val context: Context) {
         private const val TAG = "NfcManager"
     }
 
-    // Créer les données à écrire sur la carte NFC
-    fun createUserNfcData(userId: String, email: String, token: String): String {
+    // Créer les données à écrire sur la carte NFC (uniquement l'ID utilisateur)
+    fun createUserNfcData(userId: String): String {
         val userData = JSONObject().apply {
             put("userId", userId)
-            put("email", email)
-            put("token", token)
-            put("timestamp", System.currentTimeMillis())
             put("app", "ecodeli")
+            put("version", "1.0")
         }
         return userData.toString()
     }
@@ -31,11 +29,17 @@ class NfcManager(private val context: Context) {
     // Écrire sur la carte NFC
     fun writeUserDataToTag(tag: Tag, userData: String): Boolean {
         return try {
+            // Vérifier que les données ne sont pas trop grandes
+            if (userData.length > 8000) { // Limite de sécurité
+                Log.e(TAG, "Données utilisateur trop grandes")
+                return false
+            }
+
             val ndefRecord = createNdefRecord(userData)
             val ndefMessage = NdefMessage(arrayOf(ndefRecord))
             writeNdefMessage(tag, ndefMessage)
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur écriture NFC", e)
+            Log.e(TAG, "Erreur écriture NFC: ${e.message}", e)
             false
         }
     }
@@ -66,32 +70,36 @@ class NfcManager(private val context: Context) {
         }
     }
 
-    // Valider les données lues
+    // Valider les données lues (uniquement l'ID utilisateur)
     fun validateNfcData(nfcData: String): NfcUserData? {
         return try {
             val jsonObject = JSONObject(nfcData)
 
             val userId = jsonObject.optString("userId")
-            val email = jsonObject.optString("email")
-            val token = jsonObject.optString("token")
-            val timestamp = jsonObject.optLong("timestamp")
             val app = jsonObject.optString("app")
 
-            // Vérifier que c'est bien une carte EcoDeli
-            if (app != "ecodeli" || userId.isEmpty() || email.isEmpty()) {
+            // Vérifier que c'est bien une carte EcoDeli et qu'elle contient un ID
+            if (app != "ecodeli" || userId.isEmpty()) {
                 return null
             }
 
-            // Vérifier que la carte n'est pas trop ancienne (30 jours)
-            val maxAge = 30L * 24 * 60 * 60 * 1000
-            if (System.currentTimeMillis() - timestamp > maxAge) {
-                return null
-            }
-
-            NfcUserData(userId, email, token, timestamp)
+            // Pas de vérification de timestamp puisqu'on ne l'enregistre plus
+            NfcUserData(userId, System.currentTimeMillis())
         } catch (e: Exception) {
             Log.e(TAG, "Erreur validation NFC", e)
             null
+        }
+    }
+
+    // Vider le badge NFC
+    fun clearNfcTag(tag: Tag): Boolean {
+        return try {
+            val emptyRecord = NdefRecord.createTextRecord("en", "")
+            val emptyMessage = NdefMessage(arrayOf(emptyRecord))
+            writeNdefMessage(tag, emptyMessage)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors du vidage du badge NFC", e)
+            false
         }
     }
 
@@ -105,10 +113,17 @@ class NfcManager(private val context: Context) {
             if (ndef != null) {
                 ndef.connect()
                 if (ndef.isWritable) {
-                    ndef.writeNdefMessage(ndefMessage)
-                    ndef.close()
-                    true
+                    if (ndef.maxSize >= ndefMessage.toByteArray().size) {
+                        ndef.writeNdefMessage(ndefMessage)
+                        ndef.close()
+                        true
+                    } else {
+                        Log.e(TAG, "Taille du message trop grande pour la carte")
+                        ndef.close()
+                        false
+                    }
                 } else {
+                    Log.e(TAG, "Carte NFC non inscriptible")
                     ndef.close()
                     false
                 }
@@ -121,19 +136,37 @@ class NfcManager(private val context: Context) {
                     ndefFormatable.close()
                     true
                 } else {
+                    Log.e(TAG, "Carte NFC non formatable")
                     false
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur écriture NDEF", e)
+            Log.e(TAG, "Erreur écriture NDEF: ${e.message}", e)
             false
         }
     }
 
     data class NfcUserData(
         val userId: String,
-        val email: String,
-        val token: String,
         val timestamp: Long
     )
+
+    // Méthode pour obtenir des informations de débogage
+    fun getDebugInfo(nfcData: String): String {
+        return try {
+            val jsonObject = JSONObject(nfcData)
+            val userId = jsonObject.optString("userId", "N/A")
+            val app = jsonObject.optString("app", "N/A")
+            val version = jsonObject.optString("version", "N/A")
+            
+            "INFORMATIONS DEBUG:\n" +
+                    "• ID Utilisateur: $userId\n" +
+                    "• Application: $app\n" +
+                    "• Version: $version\n" +
+                    "• Endpoint utilisé: /api/users/$userId\n" +
+                    "• Données brutes: $nfcData"
+        } catch (e: Exception) {
+            "Erreur lors de l'analyse: ${e.message}\n\nDonnées brutes: $nfcData"
+        }
+    }
 }

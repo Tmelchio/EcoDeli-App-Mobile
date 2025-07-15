@@ -1,21 +1,19 @@
 package com.ecodeli
 
-import android.app.AlertDialog
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ecodeli.adapters.CommandeAdapter
 import com.ecodeli.models.Commande
-import com.ecodeli.services.ApiService
+import com.ecodeli.services.RealApiService
 
 class CommandesListActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
-    private lateinit var apiService: ApiService
+    private lateinit var apiService: RealApiService
     private lateinit var rvCommandes: RecyclerView
     private lateinit var commandeAdapter: CommandeAdapter
 
@@ -27,7 +25,7 @@ class CommandesListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_commandes_list)
 
         prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
-        apiService = ApiService()
+        apiService = RealApiService(this)
         userId = prefs.getString("user_id", "") ?: ""
 
         initViews()
@@ -55,84 +53,18 @@ class CommandesListActivity : AppCompatActivity() {
     }
 
     private fun loadCommandes() {
-        apiService.getClientCommandes(userId) { commandes ->
-            runOnUiThread {
-                commandesList.clear()
-                commandesList.addAll(commandes)
-                commandeAdapter.notifyDataSetChanged()
-            }
-        }
+        // TODO: Implémenter le chargement des commandes depuis l'API réelle
+        // Pour l'instant, afficher un message
+        Toast.makeText(this, "Chargement des commandes - En cours de développement", Toast.LENGTH_SHORT).show()
+
+        // Vider la liste pour l'instant
+        commandesList.clear()
+        commandeAdapter.notifyDataSetChanged()
     }
 
     private fun showCommandeDetails(commande: Commande) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Détails de la livraison")
-
-        val message = """
-            Commerçant: ${commande.commercant}
-            Description: ${commande.description}
-            Montant: ${commande.montant}€
-            Statut: ${getStatusLabel(commande.status)}
-            Adresse: ${commande.adresseLivraison}
-        """.trimIndent()
-
-        builder.setMessage(message)
-
-        // Ajouter bouton de validation si livraison terminée
-        if (commande.status == "livree") {
-            builder.setPositiveButton("Valider réception") { _, _ ->
-                showValidationDialog(commande)
-            }
-        }
-
-        builder.setNegativeButton("Fermer", null)
-        builder.show()
-    }
-
-    private fun showValidationDialog(commande: Commande) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Valider la livraison")
-        builder.setMessage("Saisissez le code de validation fourni par le livreur :")
-
-        val input = EditText(this)
-        input.hint = "Code de validation"
-        builder.setView(input)
-
-        builder.setPositiveButton("Valider") { _, _ ->
-            val code = input.text.toString().trim()
-            if (code.isNotEmpty()) {
-                validateLivraison(commande, code)
-            } else {
-                Toast.makeText(this, "Code requis", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        builder.setNegativeButton("Annuler", null)
-        builder.show()
-    }
-
-    private fun validateLivraison(commande: Commande, code: String) {
-        apiService.validateLivraison(commande.id, code) { success, message ->
-            runOnUiThread {
-                if (success) {
-                    Toast.makeText(this, "Livraison validée avec succès !", Toast.LENGTH_SHORT).show()
-                    loadCommandes() // Recharger la liste
-                } else {
-                    Toast.makeText(this, message ?: "Erreur de validation", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    private fun getStatusLabel(status: String): String {
-        return when (status) {
-            "en_attente" -> "En attente"
-            "en_livraison" -> "En livraison"
-            "livree" -> "Livrée"
-            "validee" -> "Validée"
-            "annulee" -> "Annulée"
-            else -> status
-        }
+        // TODO: Implémenter l'affichage des détails avec l'API réelle
+        Toast.makeText(this, "Détails de commande - En cours de développement", Toast.LENGTH_SHORT).show()
     }
 
     override fun onSupportNavigateUp(): Boolean {

@@ -1,6 +1,5 @@
 package com.ecodeli
 
-import android.app.AlertDialog
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Toast
@@ -9,12 +8,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ecodeli.adapters.PrestationAdapter
 import com.ecodeli.models.Prestation
-import com.ecodeli.services.ApiService
+import com.ecodeli.services.RealApiService
 
 class PrestationsListActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
-    private lateinit var apiService: ApiService
+    private lateinit var apiService: RealApiService
     private lateinit var rvPrestations: RecyclerView
     private lateinit var prestationAdapter: PrestationAdapter
 
@@ -26,7 +25,7 @@ class PrestationsListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_prestations_list)
 
         prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
-        apiService = ApiService()
+        apiService = RealApiService(this)
         userId = prefs.getString("user_id", "") ?: ""
 
         initViews()
@@ -54,77 +53,18 @@ class PrestationsListActivity : AppCompatActivity() {
     }
 
     private fun loadPrestations() {
-        apiService.getClientPrestations(userId) { prestations ->
-            runOnUiThread {
-                prestationsList.clear()
-                prestationsList.addAll(prestations)
-                prestationAdapter.notifyDataSetChanged()
-            }
-        }
+        // TODO: Implémenter le chargement des prestations depuis l'API réelle
+        // Pour l'instant, afficher un message
+        Toast.makeText(this, "Chargement des prestations - En cours de développement", Toast.LENGTH_SHORT).show()
+
+        // Vider la liste pour l'instant
+        prestationsList.clear()
+        prestationAdapter.notifyDataSetChanged()
     }
 
     private fun showPrestationDetails(prestation: Prestation) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Détails de la prestation")
-
-        val message = """
-            Service: ${prestation.titre}
-            Description: ${prestation.description}
-            Tarif: ${prestation.tarif}€
-            Statut: ${getStatusLabel(prestation.status)}
-            Adresse: ${prestation.adresse}
-            Durée estimée: ${prestation.dureeEstimee} minutes
-        """.trimIndent()
-
-        builder.setMessage(message)
-
-        // Actions selon le statut
-        when (prestation.status) {
-            "demandee" -> {
-                builder.setPositiveButton("Annuler la demande") { _, _ ->
-                    cancelPrestation(prestation)
-                }
-            }
-            "terminee" -> {
-                builder.setPositiveButton("Laisser un avis") { _, _ ->
-                    Toast.makeText(this, "Fonction d'évaluation - À implémenter", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        builder.setNegativeButton("Fermer", null)
-        builder.show()
-    }
-
-    private fun cancelPrestation(prestation: Prestation) {
-        AlertDialog.Builder(this)
-            .setTitle("Annuler la prestation")
-            .setMessage("Êtes-vous sûr de vouloir annuler cette prestation ?")
-            .setPositiveButton("Oui") { _, _ ->
-                apiService.cancelPrestation(prestation.id) { success, message ->
-                    runOnUiThread {
-                        if (success) {
-                            Toast.makeText(this, "Prestation annulée", Toast.LENGTH_SHORT).show()
-                            loadPrestations() // Recharger la liste
-                        } else {
-                            Toast.makeText(this, message ?: "Erreur", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
-            .setNegativeButton("Non", null)
-            .show()
-    }
-
-    private fun getStatusLabel(status: String): String {
-        return when (status) {
-            "demandee" -> "Demandée"
-            "acceptee" -> "Acceptée"
-            "en_cours" -> "En cours"
-            "terminee" -> "Terminée"
-            "annulee" -> "Annulée"
-            else -> status
-        }
+        // TODO: Implémenter l'affichage des détails avec l'API réelle
+        Toast.makeText(this, "Détails de prestation - En cours de développement", Toast.LENGTH_SHORT).show()
     }
 
     override fun onSupportNavigateUp(): Boolean {

@@ -10,15 +10,17 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
 import com.ecodeli.adapters.CommandeAdapter
 import com.ecodeli.models.Commande
 import com.ecodeli.models.Prestation
-import com.ecodeli.services.ApiService
+import com.ecodeli.services.RealApiService
+import kotlinx.coroutines.launch
 
 class ClientDashboardActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
-    private lateinit var apiService: ApiService
+    private lateinit var apiService: RealApiService
 
     // Views principales
     private lateinit var tvWelcome: TextView
@@ -46,7 +48,7 @@ class ClientDashboardActivity : AppCompatActivity() {
 
         // Initialiser les services
         prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
-        apiService = ApiService()
+        apiService = RealApiService(this)
 
         // Récupérer les données utilisateur
         userId = prefs.getString("user_id", "") ?: ""
@@ -57,9 +59,8 @@ class ClientDashboardActivity : AppCompatActivity() {
         setupClickListeners()
         setupRecyclerView()
 
-        // Charger les données
-        loadUserStats()
-        loadRecentActivities()
+        // Charger les données depuis l'API réelle
+        loadUserData()
     }
 
     private fun initViews() {
@@ -74,7 +75,16 @@ class ClientDashboardActivity : AppCompatActivity() {
         rvActivitesRecentes = findViewById(R.id.rvActivitesRecentes)
 
         // Personnaliser le message de bienvenue
-        tvWelcome.text = "Bienvenue, $userEmail"
+        val firstname = prefs.getString("user_firstname", "") ?: ""
+        val name = prefs.getString("user_name", "") ?: ""
+
+        val displayName = if (firstname.isNotEmpty() && name.isNotEmpty()) {
+            "$firstname $name"
+        } else {
+            userEmail
+        }
+
+        tvWelcome.text = "Bienvenue, $displayName"
     }
 
     private fun setupClickListeners() {
@@ -96,7 +106,6 @@ class ClientDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Menu profil simplifié - CORRECTION ICI
         val btnProfile = findViewById<Button>(R.id.btnProfile)
         btnProfile.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)
@@ -115,25 +124,23 @@ class ClientDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadUserStats() {
-        apiService.getClientStats(userId) { stats ->
-            runOnUiThread {
-                tvTotalCommandes.text = stats["total_commandes"].toString()
-                tvTotalPrestations.text = stats["total_prestations"].toString()
-                tvTotalDepense.text = "${stats["total_depense"]}€"
-            }
-        }
+    private fun loadUserData() {
+        // Charger les statistiques utilisateur depuis l'API réelle
+        // TODO: Implémenter les appels API réels pour les statistiques
+        // Pour l'instant, afficher des valeurs par défaut
+        tvTotalCommandes.text = "0"
+        tvTotalPrestations.text = "0"
+        tvTotalDepense.text = "0€"
+
+        // TODO: Charger les commandes récentes depuis l'API
+        loadRecentActivities()
     }
 
     private fun loadRecentActivities() {
-        apiService.getClientCommandes(userId) { commandes ->
-            runOnUiThread {
-                commandesList.clear()
-                // Prendre les 5 dernières commandes
-                commandesList.addAll(commandes.take(5))
-                activiteAdapter.notifyDataSetChanged()
-            }
-        }
+        // TODO: Implémenter le chargement des activités récentes depuis l'API réelle
+        // Pour l'instant, vider la liste
+        commandesList.clear()
+        activiteAdapter.notifyDataSetChanged()
     }
 
     private fun showCreateCommandeDialog() {
@@ -168,32 +175,19 @@ class ClientDashboardActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val nouvelleCommande = Commande(
-                id = "",
-                clientId = userId,
-                commercant = commercant,
-                description = description,
-                montant = montant,
-                status = "en_attente",
-                adresseLivraison = adresse
-            )
-
             btnCreer.isEnabled = false
             btnCreer.text = "Création..."
 
-            apiService.createCommande(nouvelleCommande) { success, message ->
+            // TODO: Implémenter la création de commande avec l'API réelle
+            lifecycleScope.launch {
+                // Simuler un délai pour l'instant
+                kotlinx.coroutines.delay(1000)
+
                 runOnUiThread {
                     btnCreer.isEnabled = true
                     btnCreer.text = "Créer"
-
-                    if (success) {
-                        Toast.makeText(this, "Commande créée avec succès !", Toast.LENGTH_SHORT).show()
-                        dialog.dismiss()
-                        loadRecentActivities()
-                        loadUserStats()
-                    } else {
-                        Toast.makeText(this, message ?: "Erreur de création", Toast.LENGTH_SHORT).show()
-                    }
+                    Toast.makeText(this@ClientDashboardActivity, "Fonctionnalité en cours de développement", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
                 }
             }
         }
@@ -247,56 +241,25 @@ class ClientDashboardActivity : AppCompatActivity() {
             val description = etDescription.text.toString().trim()
             val adresse = etAdresse.text.toString().trim()
             val dateSouhaitee = etDateSouhaitee.text.toString().trim()
-            val dureeStr = etDureeEstimee.text.toString().trim()
-            val budgetStr = etBudget.text.toString().trim()
 
             if (description.isEmpty() || adresse.isEmpty() || dateSouhaitee.isEmpty()) {
                 Toast.makeText(this, "Veuillez remplir tous les champs obligatoires", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val duree = try {
-                if (dureeStr.isEmpty()) 60 else dureeStr.toInt()
-            } catch (e: NumberFormatException) {
-                Toast.makeText(this, "Durée invalide", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val budget = try {
-                if (budgetStr.isEmpty()) 0.0 else budgetStr.toDouble()
-            } catch (e: NumberFormatException) {
-                Toast.makeText(this, "Budget invalide", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val nouvellePrestation = Prestation(
-                id = "",
-                prestataireId = "",
-                clientId = userId,
-                titre = typePrestation,
-                description = description,
-                tarif = budget,
-                status = "demandee",
-                datePrestation = System.currentTimeMillis(),
-                dureeEstimee = duree,
-                adresse = adresse
-            )
-
             btnCreer.isEnabled = false
             btnCreer.text = "Création..."
 
-            apiService.createPrestation(nouvellePrestation) { success, message ->
+            // TODO: Implémenter la création de prestation avec l'API réelle
+            lifecycleScope.launch {
+                // Simuler un délai pour l'instant
+                kotlinx.coroutines.delay(1000)
+
                 runOnUiThread {
                     btnCreer.isEnabled = true
                     btnCreer.text = "Créer"
-
-                    if (success) {
-                        Toast.makeText(this, "Demande de prestation créée !", Toast.LENGTH_SHORT).show()
-                        dialog.dismiss()
-                        loadUserStats()
-                    } else {
-                        Toast.makeText(this, message ?: "Erreur de création", Toast.LENGTH_SHORT).show()
-                    }
+                    Toast.makeText(this@ClientDashboardActivity, "Fonctionnalité en cours de développement", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
                 }
             }
         }
@@ -309,63 +272,12 @@ class ClientDashboardActivity : AppCompatActivity() {
     }
 
     private fun showCommandeDetails(commande: Commande) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Détails de la commande")
-
-        val message = """
-            Commerçant: ${commande.commercant}
-            Description: ${commande.description}
-            Montant: ${commande.montant}€
-            Statut: ${commande.status}
-            Adresse: ${commande.adresseLivraison}
-        """.trimIndent()
-
-        builder.setMessage(message)
-
-        // Ajouter bouton de validation si livraison terminée
-        if (commande.status == "livree") {
-            builder.setPositiveButton("Valider réception") { _, _ ->
-                showValidationDialog(commande)
-            }
-        }
-
-        builder.setNegativeButton("Fermer", null)
-        builder.show()
-    }
-
-    private fun showValidationDialog(commande: Commande) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Valider la livraison")
-
-        val input = EditText(this)
-        input.hint = "Code de validation"
-        builder.setView(input)
-
-        builder.setPositiveButton("Valider") { _, _ ->
-            val code = input.text.toString().trim()
-            if (code.isNotEmpty()) {
-                apiService.validateLivraison(commande.id, code) { success, message ->
-                    runOnUiThread {
-                        if (success) {
-                            Toast.makeText(this, "Livraison validée avec le code: $code", Toast.LENGTH_SHORT).show()
-                            loadRecentActivities()
-                        } else {
-                            Toast.makeText(this, message ?: "Erreur de validation", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            } else {
-                Toast.makeText(this, "Code requis", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        builder.setNegativeButton("Annuler", null)
-        builder.show()
+        // TODO: Implémenter l'affichage des détails avec l'API réelle
+        Toast.makeText(this, "Détails de commande - En cours de développement", Toast.LENGTH_SHORT).show()
     }
 
     override fun onResume() {
         super.onResume()
-        loadUserStats()
-        loadRecentActivities()
+        loadUserData()
     }
 }

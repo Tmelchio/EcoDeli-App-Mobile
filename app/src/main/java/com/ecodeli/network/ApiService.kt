@@ -118,6 +118,12 @@ interface ApiService {
     @GET("notifications")
     suspend fun getNotifications(): Response<List<Map<String, Any>>>
 
+    @GET("products/my-products")
+    suspend fun getMyProducts(): Response<List<ProductResponse>>
+
+    @GET("products/my-sales")
+    suspend fun getMySales(): Response<List<ProductRequestResponse>>
+
     @POST("notifications")
     suspend fun createNotification(@Body request: Map<String, Any>): Response<Map<String, Any>>
 

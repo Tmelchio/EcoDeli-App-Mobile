@@ -59,7 +59,7 @@
                 android:gravity="center"
                 android:layout_marginBottom="20dp" />
 
-            <!-- Statistiques -->
+            <!-- Statistiques - SECTION MODIFIÉE -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -103,7 +103,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Livraisons"
+                            android:text="Produits créés"
                             android:textColor="#000000"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -127,7 +127,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Prestations"
+                            android:text="Services demandés"
                             android:textColor="#000000"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -143,7 +143,7 @@
                             android:id="@+id/tvTotalDepense"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0€"
+                            android:text="0,00€"
                             android:textColor="#000000"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -155,6 +155,7 @@
                             android:textColor="#000000"
                             android:textSize="12sp" />
                     </LinearLayout>
+
                 </LinearLayout>
             </LinearLayout>
 

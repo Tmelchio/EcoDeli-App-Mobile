@@ -69,26 +69,48 @@ class CommandesListActivity : AppCompatActivity() {
     }
 
     private fun loadCommandes() {
-        Log.d(TAG, "Début chargement commandes")
+        Log.d(TAG, "Début chargement livraisons (ventes de mes produits)")
 
         lifecycleScope.launch {
-            apiService.getCommandes { success, productRequests, message ->
+            // Utiliser le nouvel endpoint pour récupérer les commandes sur MES produits
+            apiService.getMySales { success, mySales, message ->
                 runOnUiThread {
-                    if (success && productRequests != null) {
-                        Log.d(TAG, "Commandes chargées avec succès: ${productRequests.size}")
+                    if (success && mySales != null) {
+                        Log.d(TAG, "Mes livraisons chargées avec succès: ${mySales.size}")
 
                         // Debug des données reçues
-                        productRequests.forEachIndexed { index, request ->
-                            Log.d(TAG, "Commande $index: ID=${request._id}, product=${request.product?.javaClass}, amount=${request.amount}")
+                        mySales.forEachIndexed { index, sale ->
+                            Log.d(TAG, "Livraison $index: ID=${sale._id}, product=${sale.product?.javaClass}, amount=${sale.amount}")
+
+                            // Log des détails du produit
+                            when (sale.product) {
+                                is JsonObject -> {
+                                    val productObj = sale.product as JsonObject
+                                    val name = productObj.get("name")?.asString ?: "N/A"
+                                    Log.d(TAG, "  Produit: $name")
+                                }
+                                is Map<*, *> -> {
+                                    val productMap = sale.product as Map<*, *>
+                                    val name = productMap["name"] as? String ?: "N/A"
+                                    Log.d(TAG, "  Produit: $name")
+                                }
+                            }
                         }
 
                         commandesList.clear()
-                        commandesList.addAll(productRequests)
+                        commandesList.addAll(mySales)
                         commandeAdapter.notifyDataSetChanged()
 
                         Log.d(TAG, "Adapter notifié, ${commandesList.size} éléments")
+
+                        if (commandesList.isEmpty()) {
+                            Log.d(TAG, "Aucune livraison trouvée")
+                            Toast.makeText(this@CommandesListActivity,
+                                "Aucune livraison en cours",
+                                Toast.LENGTH_SHORT).show()
+                        }
                     } else {
-                        Log.e(TAG, "Erreur chargement commandes: $message")
+                        Log.e(TAG, "Erreur chargement livraisons: $message")
                         Toast.makeText(this@CommandesListActivity,
                             message ?: "Erreur lors du chargement",
                             Toast.LENGTH_SHORT).show()
@@ -99,7 +121,7 @@ class CommandesListActivity : AppCompatActivity() {
     }
 
     private fun showCommandeDetails(productRequest: ProductRequestResponse) {
-        Log.d(TAG, "Affichage détails commande: ${productRequest._id}")
+        Log.d(TAG, "Affichage détails livraison: ${productRequest._id}")
 
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Détails de la livraison")
@@ -108,25 +130,30 @@ class CommandesListActivity : AppCompatActivity() {
         val productInfo = extractProductInfo(productRequest.product)
         val locationInfo = extractLocationInfo(productRequest.delivery_location)
         val statusInfo = extractStatusInfo(productRequest.delivery_status)
-        val sellerInfo = extractSellerInfo(productRequest.product)
+        val buyerInfo = extractBuyerInfo(productRequest.receiver) // Nouveau: info acheteur
 
         Log.d(TAG, "Infos extraites - Produit: ${productInfo.name}, Prix: ${productInfo.price}, Statut: ${statusInfo.name}")
 
         val message = """
-            Produit: ${productInfo.name}
-            Vendeur: ${sellerInfo.name}
-            Prix unitaire: ${String.format("%.2f", productInfo.price)}€
-            Quantité: ${productRequest.amount}
-            Total: ${String.format("%.2f", productInfo.price * productRequest.amount)}€
-            Statut: ${statusInfo.displayName}
-            Adresse livraison: ${locationInfo.fullAddress}
-            Date commande: ${formatDate(productRequest.creation_date)}
-        """.trimIndent()
+        VOTRE PRODUIT:
+        ${productInfo.name}
+        Prix unitaire: ${String.format("%.2f", productInfo.price)}€
+        Quantité commandée: ${productRequest.amount}
+        Total: ${String.format("%.2f", productInfo.price * productRequest.amount)}€
+        
+        ACHETEUR:
+        ${buyerInfo.name}
+        
+        LIVRAISON:
+        Statut: ${statusInfo.displayName}
+        Adresse: ${locationInfo.fullAddress}
+        Date commande: ${formatDate(productRequest.creation_date)}
+    """.trimIndent()
 
         builder.setMessage(message)
 
         if (statusInfo.name == "delivered") {
-            builder.setPositiveButton("Valider réception") { _, _ ->
+            builder.setPositiveButton("Confirmer livraison") { _, _ ->
                 validateCommande(productRequest)
             }
         }
@@ -138,6 +165,7 @@ class CommandesListActivity : AppCompatActivity() {
 
         Log.d(TAG, "Dialog affiché")
     }
+
 
     private fun validateCommande(productRequest: ProductRequestResponse) {
         Log.d(TAG, "Validation commande: ${productRequest._id}")
@@ -188,6 +216,63 @@ class CommandesListActivity : AppCompatActivity() {
     private data class SellerInfo(
         val name: String
     )
+
+    private data class BuyerInfo(
+        val name: String
+    )
+
+    private fun extractBuyerInfo(receiverField: Any?): BuyerInfo {
+        return try {
+            when (receiverField) {
+                is JsonObject -> {
+                    val receiverObj = receiverField as JsonObject
+                    val firstname = receiverObj.get("firstname")?.asString ?: ""
+                    val name = receiverObj.get("name")?.asString ?: ""
+                    val email = receiverObj.get("email")?.asString ?: ""
+
+                    val fullName = if (firstname.isNotEmpty() && name.isNotEmpty()) {
+                        "$firstname $name"
+                    } else if (email.isNotEmpty()) {
+                        email
+                    } else {
+                        "Acheteur non spécifié"
+                    }
+
+                    Log.d(TAG, "BuyerInfo extrait (JsonObject): $fullName")
+                    BuyerInfo(fullName)
+                }
+                is Map<*, *> -> {
+                    val receiverMap = receiverField as Map<*, *>
+                    val firstname = receiverMap["firstname"] as? String ?: ""
+                    val name = receiverMap["name"] as? String ?: ""
+                    val email = receiverMap["email"] as? String ?: ""
+
+                    val fullName = if (firstname.isNotEmpty() && name.isNotEmpty()) {
+                        "$firstname $name"
+                    } else if (email.isNotEmpty()) {
+                        email
+                    } else {
+                        "Acheteur non spécifié"
+                    }
+
+                    Log.d(TAG, "BuyerInfo extrait (Map): $fullName")
+                    BuyerInfo(fullName)
+                }
+                is Number -> {
+                    val receiverId = receiverField.toInt()
+                    Log.d(TAG, "Receiver ID trouvé: $receiverId")
+                    BuyerInfo("Acheteur (ID: $receiverId)")
+                }
+                else -> {
+                    Log.w(TAG, "ReceiverField type inconnu: ${receiverField?.javaClass}")
+                    BuyerInfo("Acheteur non spécifié")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur extraction info acheteur", e)
+            BuyerInfo("Acheteur non spécifié")
+        }
+    }
 
     private fun extractProductInfo(productField: Any?): ProductInfo {
         return try {

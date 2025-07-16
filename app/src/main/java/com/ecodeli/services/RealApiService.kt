@@ -9,11 +9,14 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.ecodeli.models.api.ProductResponse
+import com.ecodeli.models.api.ProductRequestResponse
 
 class RealApiService(private val context: Context) {
 
     private val apiClient = ApiClient(context)
-    private val prefs: SharedPreferences = context.getSharedPreferences("ecodeli_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences("ecodeli_prefs", Context.MODE_PRIVATE)
     private val gson = Gson()
 
     companion object {
@@ -32,6 +35,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             is Map<*, *> -> {
                 try {
                     val jsonString = gson.toJson(userField)
@@ -41,6 +45,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             else -> {
                 Log.d(TAG, "UserField type inconnu: ${userField?.javaClass}")
                 null
@@ -58,6 +63,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             is Map<*, *> -> {
                 try {
                     val jsonString = gson.toJson(productField)
@@ -67,6 +73,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             else -> {
                 Log.d(TAG, "ProductField type inconnu: ${productField?.javaClass}")
                 null
@@ -84,6 +91,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             is Map<*, *> -> {
                 try {
                     val jsonString = gson.toJson(locationField)
@@ -93,6 +101,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             else -> {
                 Log.d(TAG, "LocationField type inconnu: ${locationField?.javaClass}")
                 null
@@ -110,6 +119,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             is Map<*, *> -> {
                 try {
                     val jsonString = gson.toJson(statusField)
@@ -119,6 +129,7 @@ class RealApiService(private val context: Context) {
                     null
                 }
             }
+
             else -> {
                 Log.d(TAG, "StatusField type inconnu: ${statusField?.javaClass}")
                 null
@@ -147,7 +158,11 @@ class RealApiService(private val context: Context) {
 
     // ==================== AUTHENTIFICATION ====================
 
-    suspend fun login(email: String, password: String, callback: (Boolean, String?, String?) -> Unit) {
+    suspend fun login(
+        email: String,
+        password: String,
+        callback: (Boolean, String?, String?) -> Unit
+    ) {
         try {
             withContext(Dispatchers.IO) {
                 val request = LoginRequest(email, password)
@@ -167,7 +182,12 @@ class RealApiService(private val context: Context) {
                             callback(false, null, "Réponse vide du serveur")
                         }
                     } else {
-                        Log.e(TAG, "Erreur connexion: ${response.code()} - ${response.errorBody()?.string()}")
+                        Log.e(
+                            TAG,
+                            "Erreur connexion: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
                         val errorMsg = if (response.code() == 400) {
                             "Email ou mot de passe incorrect"
                         } else {
@@ -204,7 +224,12 @@ class RealApiService(private val context: Context) {
                         Log.d(TAG, "Inscription réussie")
                         callback(true, "Inscription réussie")
                     } else {
-                        Log.e(TAG, "Erreur inscription: ${response.code()} - ${response.errorBody()?.string()}")
+                        Log.e(
+                            TAG,
+                            "Erreur inscription: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
                         val errorMsg = when (response.code()) {
                             400 -> "Un compte avec cet email existe déjà"
                             else -> "Erreur d'inscription (${response.code()})"
@@ -289,12 +314,20 @@ class RealApiService(private val context: Context) {
 
                         // Log des données pour debug
                         requests.forEachIndexed { index, request ->
-                            Log.d(TAG, "Commande $index: product=${request.product?.javaClass}, status=${request.delivery_status?.javaClass}")
+                            Log.d(
+                                TAG,
+                                "Commande $index: product=${request.product?.javaClass}, status=${request.delivery_status?.javaClass}"
+                            )
                         }
 
                         callback(true, requests, null)
                     } else {
-                        Log.e(TAG, "Erreur récupération commandes: ${response.code()} - ${response.errorBody()?.string()}")
+                        Log.e(
+                            TAG,
+                            "Erreur récupération commandes: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
                         callback(false, null, "Erreur lors du chargement des commandes")
                     }
                 }
@@ -314,7 +347,10 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    suspend fun createProduct(request: ProductRequest, callback: (Boolean, ProductResponse?, String?) -> Unit) {
+    suspend fun createProduct(
+        request: ProductRequest,
+        callback: (Boolean, ProductResponse?, String?) -> Unit
+    ) {
         try {
             withContext(Dispatchers.IO) {
                 Log.d(TAG, "Création produit: ${request.name}, prix: ${request.price}")
@@ -325,7 +361,12 @@ class RealApiService(private val context: Context) {
                 val locationResponse = apiClient.apiService.createLocation(locationRequest)
 
                 if (!locationResponse.isSuccessful) {
-                    Log.e(TAG, "Erreur création location: ${locationResponse.code()} - ${locationResponse.errorBody()?.string()}")
+                    Log.e(
+                        TAG,
+                        "Erreur création location: ${locationResponse.code()} - ${
+                            locationResponse.errorBody()?.string()
+                        }"
+                    )
                     withContext(Dispatchers.Main) {
                         callback(false, null, "Erreur création de l'adresse")
                     }
@@ -393,12 +434,20 @@ class RealApiService(private val context: Context) {
 
                         // Log des données pour debug
                         services.forEachIndexed { index, service ->
-                            Log.d(TAG, "Service $index: user=${service.user?.javaClass}, actor=${service.actor?.javaClass}")
+                            Log.d(
+                                TAG,
+                                "Service $index: user=${service.user?.javaClass}, actor=${service.actor?.javaClass}"
+                            )
                         }
 
                         callback(true, services, null)
                     } else {
-                        Log.e(TAG, "Erreur récupération prestations: ${response.code()} - ${response.errorBody()?.string()}")
+                        Log.e(
+                            TAG,
+                            "Erreur récupération prestations: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
                         callback(false, null, "Erreur lors du chargement des prestations")
                     }
                 }
@@ -411,7 +460,10 @@ class RealApiService(private val context: Context) {
         }
     }
 
-    suspend fun createService(request: ServiceRequest, callback: (Boolean, ServiceResponse?, String?) -> Unit) {
+    suspend fun createService(
+        request: ServiceRequest,
+        callback: (Boolean, ServiceResponse?, String?) -> Unit
+    ) {
         try {
             withContext(Dispatchers.IO) {
                 Log.d(TAG, "Création service: ${request.name}, prix: ${request.price}")
@@ -446,7 +498,12 @@ class RealApiService(private val context: Context) {
 
     // ==================== LOCATIONS ====================
 
-    suspend fun createLocation(city: String, zipcode: String, address: String, callback: (Boolean, LocationInfo?, String?) -> Unit) {
+    suspend fun createLocation(
+        city: String,
+        zipcode: String,
+        address: String,
+        callback: (Boolean, LocationInfo?, String?) -> Unit
+    ) {
         try {
             withContext(Dispatchers.IO) {
                 val request = LocationRequest(
@@ -461,7 +518,12 @@ class RealApiService(private val context: Context) {
                         Log.d(TAG, "Location créée avec ID: ${location?._id}")
                         callback(true, location, "Adresse créée")
                     } else {
-                        Log.e(TAG, "Erreur création location: ${response.code()} - ${response.errorBody()?.string()}")
+                        Log.e(
+                            TAG,
+                            "Erreur création location: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
                         callback(false, null, "Erreur lors de la création de l'adresse")
                     }
                 }
@@ -493,10 +555,12 @@ class RealApiService(private val context: Context) {
                     val roleName = roleObj.get("name")?.asString ?: "user"
                     putString("user_role", roleName)
                 }
+
                 is Map<*, *> -> {
                     val roleName = (user.role as Map<*, *>)["name"] as? String ?: "user"
                     putString("user_role", roleName)
                 }
+
                 else -> putString("user_role", "user")
             }
 
@@ -510,6 +574,7 @@ class RealApiService(private val context: Context) {
                         putString("user_subscription", subName)
                         putFloat("user_subscription_price", subPrice.toFloat())
                     }
+
                     is Map<*, *> -> {
                         val subMap = sub as Map<*, *>
                         val subName = subMap["name"] as? String ?: "free"
@@ -517,6 +582,7 @@ class RealApiService(private val context: Context) {
                         putString("user_subscription", subName)
                         putFloat("user_subscription_price", subPrice)
                     }
+
                     else -> {
                         putString("user_subscription", "free")
                         putFloat("user_subscription_price", 0.0f)
@@ -548,5 +614,65 @@ class RealApiService(private val context: Context) {
     private fun clearUserInfo() {
         Log.d(TAG, "Nettoyage des données utilisateur")
         prefs.edit().clear().apply()
+    }
+
+    suspend fun getMyProducts(callback: (Boolean, List<ProductResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération de mes produits")
+                val response = apiClient.apiService.getMyProducts()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val products = response.body() ?: emptyList()
+                        Log.d(TAG, "Mes produits récupérés: ${products.size}")
+                        callback(true, products, null)
+                    } else {
+                        Log.e(
+                            TAG,
+                            "Erreur récupération mes produits: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
+                        callback(false, null, "Erreur lors du chargement de vos produits")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get mes produits", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getMySales(callback: (Boolean, List<ProductRequestResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération de mes ventes")
+                val response = apiClient.apiService.getMySales()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val sales = response.body() ?: emptyList()
+                        Log.d(TAG, "Mes ventes récupérées: ${sales.size}")
+                        callback(true, sales, null)
+                    } else {
+                        Log.e(
+                            TAG,
+                            "Erreur récupération mes ventes: ${response.code()} - ${
+                                response.errorBody()?.string()
+                            }"
+                        )
+                        callback(false, null, "Erreur lors du chargement de vos livraisons")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get mes ventes", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
     }
 }

@@ -101,8 +101,8 @@ class ClientDashboardActivity : AppCompatActivity() {
 
         btnMesCommandes.setOnClickListener {
             Log.d(TAG, "Clic sur Mes Commandes")
-            val intent = Intent(this, CommandesListActivity::class.java)
-            startActivity(intent)
+            // Afficher un dialog pour choisir
+            showCommandesOptionsDialog()
         }
 
         btnMesPrestations.setOnClickListener {
@@ -119,6 +119,34 @@ class ClientDashboardActivity : AppCompatActivity() {
         }
     }
 
+    private fun showCommandesOptionsDialog() {
+        val options = arrayOf(
+            "Mes produits créés (à vendre)",
+            "Mes commandes (achats en cours)"
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle("Que voulez-vous voir ?")
+            .setItems(options) { _, which ->
+                val intent = Intent(this, CommandesListActivity::class.java)
+                when (which) {
+                    0 -> {
+                        // Mes produits créés
+                        intent.putExtra("mode", "mes_produits")
+                        Log.d(TAG, "Ouverture Mes Produits")
+                    }
+                    1 -> {
+                        // Mes commandes (achats)
+                        intent.putExtra("mode", "commandes")
+                        Log.d(TAG, "Ouverture Mes Commandes")
+                    }
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
+    }
+
     private fun loadUserData() {
         Log.d(TAG, "Chargement des données utilisateur")
         // Charger les statistiques depuis l'API
@@ -130,153 +158,29 @@ class ClientDashboardActivity : AppCompatActivity() {
             try {
                 Log.d(TAG, "Chargement des statistiques")
 
-                // Charger MES PRODUITS CRÉÉS (pour les livraisons)
-                apiService.getMyProducts { successProducts, myProducts, errorProductsMessage ->
-                    if (successProducts && myProducts != null) {
-                        Log.d(TAG, "Mes produits créés: ${myProducts.size}")
-
+                // Utiliser la nouvelle méthode getTotalStats
+                apiService.getTotalStats { success, stats, errorMessage ->
+                    if (success && stats != null) {
                         runOnUiThread {
-                            tvTotalCommandes.text = myProducts.size.toString()
-                        }
+                            val totalProduits = stats["totalProduits"] as? Int ?: 0
+                            val totalCommandes = stats["totalCommandes"] as? Int ?: 0
+                            val totalServices = stats["totalServices"] as? Int ?: 0
+                            val totalDepense = stats["totalDepense"] as? Double ?: 0.0
 
-                        // Calculer le total des gains potentiels de mes produits
-                        val totalProductsValue = myProducts.sumOf { product ->
-                            try {
-                                Log.d(TAG, "Produit: ${product.name}, prix=${product.price}")
-                                product.price
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Erreur calcul prix produit", e)
-                                0.0
-                            }
-                        }
+                            // Mettre à jour l'interface
+                            tvTotalCommandes.text = totalProduits.toString() // Nombre de produits créés
+                            tvTotalPrestations.text = totalServices.toString() // Nombre de services demandés
+                            tvTotalDepense.text = String.format("%.2f€", totalDepense) // Total dépensé
 
-                        Log.d(TAG, "Total valeur de mes produits: $totalProductsValue")
-
-                        // Charger MES SERVICES DEMANDÉS (prestations)
-                        lifecycleScope.launch {
-                            apiService.getPrestations { successP, services, errorMessageP ->
-                                val totalPrestations = if (successP && services != null) {
-                                    Log.d(TAG, "Prestations chargées: ${services.size}")
-                                    services.size
-                                } else {
-                                    Log.e(TAG, "Erreur prestations: $errorMessageP")
-                                    0
-                                }
-
-                                val totalPrestationsDepense = if (successP && services != null) {
-                                    val total = services.sumOf { service ->
-                                        try {
-                                            Log.d(TAG, "Service: ${service.name}, prix=${service.price}")
-                                            service.price
-                                        } catch (e: Exception) {
-                                            Log.e(TAG, "Erreur calcul prix service", e)
-                                            0.0
-                                        }
-                                    }
-                                    Log.d(TAG, "Total dépenses prestations: $total")
-                                    total
-                                } else {
-                                    0.0
-                                }
-
-                                runOnUiThread {
-                                    tvTotalPrestations.text = totalPrestations.toString()
-
-                                    // Le total dépensé = prix des services demandés seulement
-                                    // (les produits créés sont des gains potentiels, pas des dépenses)
-                                    val totalDepense = totalPrestationsDepense
-                                    tvTotalDepense.text = String.format("%.2f€", totalDepense)
-
-                                    Log.d(TAG, "Statistiques mises à jour: produits créés=${myProducts.size}, prestations=$totalPrestations, dépenses=$totalDepense")
-                                }
-                            }
+                            Log.d(TAG, "Stats mises à jour: produits=$totalProduits, services=$totalServices, dépense=$totalDepense")
                         }
                     } else {
-                        Log.e(TAG, "Erreur mes produits: $errorProductsMessage")
-
-                        // Fallback: charger les anciennes données comme avant
-                        lifecycleScope.launch {
-                            apiService.getCommandes { success, productRequests, errorMessage ->
-                                if (success && productRequests != null) {
-                                    Log.d(TAG, "Fallback - Commandes chargées: ${productRequests.size}")
-
-                                    runOnUiThread {
-                                        tvTotalCommandes.text = productRequests.size.toString()
-                                    }
-
-                                    // Calculer le total des dépenses commandes
-                                    val totalCommandesDepense = productRequests.sumOf { request ->
-                                        try {
-                                            val productPrice = when (request.product) {
-                                                is JsonObject -> {
-                                                    val productObj = request.product as JsonObject
-                                                    productObj.get("price")?.asDouble ?: 0.0
-                                                }
-                                                is Map<*, *> -> {
-                                                    val productMap = request.product as Map<*, *>
-                                                    (productMap["price"] as? Number)?.toDouble() ?: 0.0
-                                                }
-                                                else -> {
-                                                    Log.w(TAG, "Product type inconnu: ${request.product?.javaClass}")
-                                                    0.0
-                                                }
-                                            }
-                                            val total = productPrice * request.amount
-                                            Log.d(TAG, "Commande: prix=$productPrice, quantité=${request.amount}, total=$total")
-                                            total
-                                        } catch (e: Exception) {
-                                            Log.e(TAG, "Erreur calcul prix commande", e)
-                                            0.0
-                                        }
-                                    }
-
-                                    Log.d(TAG, "Total dépenses commandes: $totalCommandesDepense")
-
-                                    // Charger les services comme avant
-                                    lifecycleScope.launch {
-                                        apiService.getPrestations { successP, services, errorMessageP ->
-                                            val totalPrestations = if (successP && services != null) {
-                                                Log.d(TAG, "Prestations chargées: ${services.size}")
-                                                services.size
-                                            } else {
-                                                Log.e(TAG, "Erreur prestations: $errorMessageP")
-                                                0
-                                            }
-
-                                            val totalPrestationsDepense = if (successP && services != null) {
-                                                val total = services.sumOf { service ->
-                                                    try {
-                                                        Log.d(TAG, "Service: ${service.name}, prix=${service.price}")
-                                                        service.price
-                                                    } catch (e: Exception) {
-                                                        Log.e(TAG, "Erreur calcul prix service", e)
-                                                        0.0
-                                                    }
-                                                }
-                                                Log.d(TAG, "Total dépenses prestations: $total")
-                                                total
-                                            } else {
-                                                0.0
-                                            }
-
-                                            runOnUiThread {
-                                                tvTotalPrestations.text = totalPrestations.toString()
-                                                val totalDepense = totalCommandesDepense + totalPrestationsDepense
-                                                tvTotalDepense.text = String.format("%.2f€", totalDepense)
-                                                Log.d(TAG, "Statistiques mises à jour (fallback): commandes=$totalPrestations, dépenses=$totalDepense")
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Log.e(TAG, "Erreur commandes: $errorMessage")
-                                    // Valeurs par défaut en cas d'erreur
-                                    runOnUiThread {
-                                        tvTotalCommandes.text = "0"
-                                        tvTotalPrestations.text = "0"
-                                        tvTotalDepense.text = "0.00€"
-                                    }
-                                }
-                            }
+                        Log.e(TAG, "Erreur stats: $errorMessage")
+                        // Valeurs par défaut en cas d'erreur
+                        runOnUiThread {
+                            tvTotalCommandes.text = "0"
+                            tvTotalPrestations.text = "0"
+                            tvTotalDepense.text = "0.00€"
                         }
                     }
                 }
@@ -286,9 +190,6 @@ class ClientDashboardActivity : AppCompatActivity() {
                     tvTotalCommandes.text = "0"
                     tvTotalPrestations.text = "0"
                     tvTotalDepense.text = "0.00€"
-                    Toast.makeText(this@ClientDashboardActivity,
-                        "Erreur lors du chargement des statistiques",
-                        Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -512,33 +413,23 @@ class ClientDashboardActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun formatDateForApi(dateString: String): String {
+    private fun formatDateForApi(dateStr: String): String {
         return try {
-            Log.d(TAG, "Formatage date: $dateString")
-            // Convertir du format dd/MM/yyyy vers ISO
+            // Convertir la date en format ISO
             val inputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            val date = inputFormat.parse(dateString)
-            val formattedDate = outputFormat.format(date ?: Date())
-            Log.d(TAG, "Date formatée: $formattedDate")
-            formattedDate
+            val date = inputFormat.parse(dateStr)
+            outputFormat.format(date ?: Date())
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur formatage date: $dateString", e)
-            // En cas d'erreur, utiliser la date actuelle
-            val currentDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).format(Date())
-            Log.d(TAG, "Utilisation date actuelle: $currentDate")
-            currentDate
+            Log.e(TAG, "Erreur formatage date: $dateStr", e)
+            // Format par défaut
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).format(Date())
         }
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d(TAG, "onResume - rechargement des données")
+        // Recharger les données quand on revient sur l'activité
         loadUserData()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy")
     }
 }

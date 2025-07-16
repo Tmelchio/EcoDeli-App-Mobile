@@ -544,6 +544,67 @@ class RealApiService(private val context: Context) {
             null
         }
     }
+    suspend fun getMyProducts(callback: (Boolean, List<ProductResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération de mes produits")
+                val response = apiClient.apiService.getMyProducts()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val products = response.body() ?: emptyList()
+                        Log.d(TAG, "Mes produits récupérés: ${products.size}")
+
+                        // Log des données pour debug
+                        products.forEachIndexed { index, product ->
+                            Log.d(TAG, "Produit $index: name=${product.name}, price=${product.price}")
+                        }
+
+                        callback(true, products, null)
+                    } else {
+                        Log.e(TAG, "Erreur récupération mes produits: ${response.code()} - ${response.errorBody()?.string()}")
+                        callback(false, null, "Erreur lors du chargement de vos produits")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get mes produits", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getMySales(callback: (Boolean, List<ProductRequestResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération de mes ventes")
+                val response = apiClient.apiService.getMySales()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val sales = response.body() ?: emptyList()
+                        Log.d(TAG, "Mes ventes récupérées: ${sales.size}")
+
+                        // Log des données pour debug
+                        sales.forEachIndexed { index, sale ->
+                            Log.d(TAG, "Vente $index: ID=${sale._id}, product=${sale.product?.javaClass}, amount=${sale.amount}")
+                        }
+
+                        callback(true, sales, null)
+                    } else {
+                        Log.e(TAG, "Erreur récupération mes ventes: ${response.code()} - ${response.errorBody()?.string()}")
+                        callback(false, null, "Erreur lors du chargement de vos livraisons")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get mes ventes", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
 
     private fun clearUserInfo() {
         Log.d(TAG, "Nettoyage des données utilisateur")

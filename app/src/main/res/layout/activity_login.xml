@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+<<<<<<< HEAD
     android:background="#D3D3D3"
 <<<<<<< HEAD
     android:gravity="center_horizontal"
@@ -15,6 +16,9 @@
 >>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
 =======
 >>>>>>> 172c5bb (initial commit)
+=======
+    android:background="#D3D3D3">
+>>>>>>> b782b28 (correction activity_login.xml)
 
     <ScrollView
         android:layout_width="match_parent"
@@ -58,6 +62,7 @@
                     <Button
                         android:id="@+id/btnConnexion"
                         android:layout_height="40dp"
+                        android:layout_width="wrap_content"
                         android:text="Connexion"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/btn_green_border"
@@ -67,8 +72,12 @@
                     <Button
                         android:id="@+id/btnInscription"
                         android:layout_height="40dp"
+                        android:layout_width="wrap_content"
+                        android:text="Inscription"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/btn_green"
+                        app:backgroundTint="@null"
+                        android:textColor="#FFFFFF" />
                 </LinearLayout>
 
                 <!-- Formulaire de connexion -->

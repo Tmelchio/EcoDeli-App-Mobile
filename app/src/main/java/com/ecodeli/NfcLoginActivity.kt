@@ -91,21 +91,15 @@ class NfcLoginActivity : AppCompatActivity() {
                 Toast.makeText(this@NfcLoginActivity, "Connexion en cours...", Toast.LENGTH_SHORT).show()
                 
                 // MODE NORMAL: Utiliser l'API avec l'endpoint /api/users
-                apiService.loginWithUserId(userData.userId) { success, userType, message ->
+                apiService.loginByUserId(userData.userId) { success, userType, message ->
                     if (success) {
                         Toast.makeText(this@NfcLoginActivity, "Connexion NFC réussie !", Toast.LENGTH_SHORT).show()
-                        
-                        // Rediriger vers le dashboard approprié
                         val homeIntent = Intent(this@NfcLoginActivity, ClientDashboardActivity::class.java)
                         homeIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                         startActivity(homeIntent)
                         finish()
                     } else {
-                        Toast.makeText(this@NfcLoginActivity, 
-                            message ?: "Erreur de connexion NFC", 
-                            Toast.LENGTH_LONG).show()
-                        
-                        // Si l'utilisateur n'est pas trouvé, afficher le contenu du badge
+                        Toast.makeText(this@NfcLoginActivity, message ?: "Erreur de connexion NFC", Toast.LENGTH_LONG).show()
                         if (message?.contains("non trouvé") == true) {
                             showBadgeContent(nfcData)
                         }

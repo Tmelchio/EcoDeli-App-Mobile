@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class RealApiService(private val context: Context) {
-
     private val apiClient = ApiClient(context)
     private val prefs: SharedPreferences = context.getSharedPreferences("ecodeli_prefs", Context.MODE_PRIVATE)
     private val gson = Gson()
@@ -19,6 +18,36 @@ class RealApiService(private val context: Context) {
     companion object {
         private const val TAG = "RealApiService"
     }
+
+    suspend fun loginByUserId(userId: String, callback: (Boolean, String?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                val request = LoginByIdRequest(userId.toInt())
+                val response = apiClient.apiService.loginById(request)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val loginResponse = response.body()
+                        if (loginResponse != null) {
+                            apiClient.saveToken(loginResponse.token)
+                            saveUserInfo(loginResponse.user)
+                            callback(true, "client", "Connexion réussie")
+                        } else {
+                            callback(false, null, "Réponse vide du serveur")
+                        }
+                    } else {
+                        callback(false, null, "Erreur de connexion (${response.code()})")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+// ...le reste du code de la classe (inchangé)...
+
+    // ...existing code...
 
     // ==================== HELPER METHODS ====================
 

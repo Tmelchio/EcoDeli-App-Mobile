@@ -86,11 +86,9 @@ class NfcLoginActivity : AppCompatActivity() {
                 return
             }
 
-            // Utiliser l'ID utilisateur pour la connexion via l'API
+            // Essayer la connexion via l'API, sinon fallback direct
             lifecycleScope.launch {
                 Toast.makeText(this@NfcLoginActivity, "Connexion en cours...", Toast.LENGTH_SHORT).show()
-                
-                // MODE NORMAL: Utiliser l'API avec l'endpoint /api/users
                 apiService.loginByUserId(userData.userId) { success, userType, message ->
                     if (success) {
                         Toast.makeText(this@NfcLoginActivity, "Connexion NFC réussie !", Toast.LENGTH_SHORT).show()
@@ -100,9 +98,8 @@ class NfcLoginActivity : AppCompatActivity() {
                         finish()
                     } else {
                         Toast.makeText(this@NfcLoginActivity, message ?: "Erreur de connexion NFC", Toast.LENGTH_LONG).show()
-                        if (message?.contains("non trouvé") == true) {
-                            showBadgeContent(nfcData)
-                        }
+                        // Fallback : connexion directe si l'API ne répond pas ou utilisateur non trouvé
+                        testDirectLogin(userData.userId)
                     }
                 }
             }

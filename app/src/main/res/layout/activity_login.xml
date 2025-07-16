@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#D3D3D3"
+<<<<<<< HEAD
     android:gravity="center_horizontal"
 <<<<<<< HEAD
     android:fitsSystemWindows="true">
@@ -12,6 +13,8 @@
     android:fitsSystemWindows="true"
     android:paddingBottom="16dp">
 >>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+=======
+>>>>>>> 172c5bb (initial commit)
 
     <ScrollView
         android:layout_width="match_parent"
@@ -54,9 +57,6 @@
 
                     <Button
                         android:id="@+id/btnConnexion"
-                        android:layout_width="wrap_content"
-                        android:minWidth="120dp"
-                        android:paddingHorizontal="12dp"
                         android:layout_height="40dp"
                         android:text="Connexion"
                         android:layout_marginEnd="8dp"
@@ -66,20 +66,13 @@
 
                     <Button
                         android:id="@+id/btnInscription"
-                        android:layout_width="wrap_content"
-                        android:minWidth="120dp"
-                        android:paddingHorizontal="12dp"
                         android:layout_height="40dp"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/btn_green"
-                        android:text="Inscription"
-                        android:textColor="#000000"
-                        app:backgroundTint="@null" />
                 </LinearLayout>
 
                 <!-- Formulaire de connexion -->
                 <LinearLayout
-                    android:id="@+id/layoutConnexion"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
@@ -137,6 +130,7 @@
                         android:textColor="#000000"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
+<<<<<<< HEAD
 
                 <!-- Formulaire d'inscription -->
                 <LinearLayout
@@ -215,11 +209,12 @@
     </ScrollView>
 </LinearLayout>
 =======
+=======
+>>>>>>> 172c5bb (initial commit)
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
 
-    <!-- NFC bouton -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -236,7 +231,6 @@
             android:padding="10dp"
             android:contentDescription="NFC Icon"
             android:layout_marginTop="12dp"
-            android:layout_marginBottom="32dp"
             app:backgroundTint="@null" />
     </LinearLayout>
 

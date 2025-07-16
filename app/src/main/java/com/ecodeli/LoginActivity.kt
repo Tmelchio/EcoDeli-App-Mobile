@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.widget.Button
 <<<<<<< HEAD
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -17,7 +16,6 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnLogin: Button
     private lateinit var loginEmail: EditText
     private lateinit var loginPassword: EditText
-    private lateinit var nfcButton: ImageView
     private lateinit var btnInscription: Button
     private lateinit var apiService: RealApiService
 =======
@@ -39,7 +37,6 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btnLogin)
         loginEmail = findViewById(R.id.loginEmail)
         loginPassword = findViewById(R.id.loginPassword)
-        nfcButton = findViewById(R.id.nfcButton)
         btnInscription = findViewById(R.id.btnInscription)
 
         // Pré-remplir l'email si fourni depuis l'inscription
@@ -61,11 +58,6 @@ class LoginActivity : AppCompatActivity() {
             startActivity(intent)
         }
 <<<<<<< HEAD
-
-        nfcButton.setOnClickListener {
-            val intent = Intent(this, NfcLoginActivity::class.java)
-            startActivity(intent)
-        }
 
         // Vérifier si l'utilisateur est déjà connecté
         checkExistingSession()
@@ -122,7 +114,7 @@ class LoginActivity : AppCompatActivity() {
                     startActivity(intent)
                     finish()
                 } else {
-                    Toast.makeText(this@LoginActivity, message ?: "Erreur de connexion", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@LoginActivity, message ?: "Erreur de connexion", Toast.LENGTH_LONG).show()
                 }
             }
         }

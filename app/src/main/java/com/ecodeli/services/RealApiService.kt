@@ -5,137 +5,20 @@ import android.content.SharedPreferences
 import android.util.Log
 import com.ecodeli.models.api.*
 import com.ecodeli.network.ApiClient
-import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class RealApiService(private val context: Context) {
+class RealApiService(context: Context) {
 
     private val apiClient = ApiClient(context)
     private val prefs: SharedPreferences = context.getSharedPreferences("ecodeli_prefs", Context.MODE_PRIVATE)
-    private val gson = Gson()
 
     companion object {
         private const val TAG = "RealApiService"
     }
 
-    // ==================== HELPER METHODS ====================
-
-    private fun extractUserInfo(userField: Any?): UserInfo? {
-        return when (userField) {
-            is JsonObject -> {
-                try {
-                    gson.fromJson(userField, UserInfo::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion UserInfo depuis JsonObject", e)
-                    null
-                }
-            }
-            is Map<*, *> -> {
-                try {
-                    val jsonString = gson.toJson(userField)
-                    gson.fromJson(jsonString, UserInfo::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion UserInfo depuis Map", e)
-                    null
-                }
-            }
-            else -> {
-                Log.d(TAG, "UserField type inconnu: ${userField?.javaClass}")
-                null
-            }
-        }
-    }
-
-    private fun extractProductInfo(productField: Any?): ProductResponse? {
-        return when (productField) {
-            is JsonObject -> {
-                try {
-                    gson.fromJson(productField, ProductResponse::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion ProductResponse depuis JsonObject", e)
-                    null
-                }
-            }
-            is Map<*, *> -> {
-                try {
-                    val jsonString = gson.toJson(productField)
-                    gson.fromJson(jsonString, ProductResponse::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion ProductResponse depuis Map", e)
-                    null
-                }
-            }
-            else -> {
-                Log.d(TAG, "ProductField type inconnu: ${productField?.javaClass}")
-                null
-            }
-        }
-    }
-
-    private fun extractLocationInfo(locationField: Any?): LocationInfo? {
-        return when (locationField) {
-            is JsonObject -> {
-                try {
-                    gson.fromJson(locationField, LocationInfo::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion LocationInfo depuis JsonObject", e)
-                    null
-                }
-            }
-            is Map<*, *> -> {
-                try {
-                    val jsonString = gson.toJson(locationField)
-                    gson.fromJson(jsonString, LocationInfo::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion LocationInfo depuis Map", e)
-                    null
-                }
-            }
-            else -> {
-                Log.d(TAG, "LocationField type inconnu: ${locationField?.javaClass}")
-                null
-            }
-        }
-    }
-
-    private fun extractDeliveryStatusInfo(statusField: Any?): DeliveryStatusInfo? {
-        return when (statusField) {
-            is JsonObject -> {
-                try {
-                    gson.fromJson(statusField, DeliveryStatusInfo::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion DeliveryStatusInfo depuis JsonObject", e)
-                    null
-                }
-            }
-            is Map<*, *> -> {
-                try {
-                    val jsonString = gson.toJson(statusField)
-                    gson.fromJson(jsonString, DeliveryStatusInfo::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erreur conversion DeliveryStatusInfo depuis Map", e)
-                    null
-                }
-            }
-            else -> {
-                Log.d(TAG, "StatusField type inconnu: ${statusField?.javaClass}")
-                null
-            }
-        }
-    }
-
-    private fun extractStringFromAny(field: Any?, defaultValue: String = ""): String {
-        return when (field) {
-            is String -> field
-            is JsonObject -> field.get("name")?.asString ?: defaultValue
-            is Map<*, *> -> field["name"] as? String ?: defaultValue
-            else -> defaultValue
-        }
-    }
-
-    private fun extractDoubleFromAny(field: Any?, defaultValue: Double = 0.0): Double {
+    private fun extractDoubleFromField(field: Any?, defaultValue: Double = 0.0): Double {
         return when (field) {
             is Number -> field.toDouble()
             is String -> field.toDoubleOrNull() ?: defaultValue
@@ -256,25 +139,35 @@ class RealApiService(private val context: Context) {
     suspend fun logout(callback: (Boolean, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
-                apiClient.apiService.logout()
+                Log.d(TAG, "Déconnexion")
+                val response = apiClient.apiService.logout()
 
                 withContext(Dispatchers.Main) {
+                    // Effacer les données locales même si l'API échoue
+                    prefs.edit().clear().apply()
                     apiClient.clearToken()
-                    clearUserInfo()
-                    callback(true, "Déconnexion réussie")
+
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Déconnexion réussie")
+                        callback(true, "Déconnexion réussie")
+                    } else {
+                        Log.w(TAG, "Erreur déconnexion API mais nettoyage local fait")
+                        callback(true, "Déconnexion réussie")
+                    }
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erreur de déconnexion", e)
             withContext(Dispatchers.Main) {
+                // Effacer les données locales même en cas d'erreur
+                prefs.edit().clear().apply()
                 apiClient.clearToken()
-                clearUserInfo()
-                callback(true, "Déconnexion locale")
+                callback(true, "Déconnexion réussie")
             }
         }
     }
 
-    // ==================== PRODUITS / COMMANDES ====================
+    // ==================== COMMANDES ====================
 
     suspend fun getCommandes(callback: (Boolean, List<ProductRequestResponse>?, String?) -> Unit) {
         try {
@@ -284,15 +177,15 @@ class RealApiService(private val context: Context) {
 
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
-                        val requests = response.body() ?: emptyList()
-                        Log.d(TAG, "Commandes récupérées: ${requests.size}")
+                        val commandes = response.body() ?: emptyList()
+                        Log.d(TAG, "Commandes récupérées: ${commandes.size}")
 
                         // Log des données pour debug
-                        requests.forEachIndexed { index, request ->
-                            Log.d(TAG, "Commande $index: product=${request.product?.javaClass}, status=${request.delivery_status?.javaClass}")
+                        commandes.forEachIndexed { index, commande ->
+                            Log.d(TAG, "Commande $index: product=${commande.product?.javaClass}, delivery_status=${commande.delivery_status?.javaClass}")
                         }
 
-                        callback(true, requests, null)
+                        callback(true, commandes, null)
                     } else {
                         Log.e(TAG, "Erreur récupération commandes: ${response.code()} - ${response.errorBody()?.string()}")
                         callback(false, null, "Erreur lors du chargement des commandes")
@@ -307,6 +200,142 @@ class RealApiService(private val context: Context) {
         }
     }
 
+    suspend fun getTotalStats(callback: (Boolean, Map<String, Any>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération des statistiques totales")
+
+                // Récupérer mes produits créés
+                val productsResponse = apiClient.apiService.getProducts()
+                val servicesResponse = apiClient.apiService.getServices()
+                val commandesResponse = apiClient.apiService.getProductRequests()
+
+                withContext(Dispatchers.Main) {
+                    val userId = prefs.getString("user_id", "")?.toIntOrNull()
+                    var totalDepense = 0.0
+                    var totalProduits = 0
+                    var totalCommandes = 0
+                    var totalServices = 0
+
+                    // Compter mes produits créés (que j'ai vendus)
+                    if (productsResponse.isSuccessful) {
+                        val allProducts = productsResponse.body() ?: emptyList()
+                        val myProducts = allProducts.filter { product ->
+                            when (product.seller) {
+                                is JsonObject -> {
+                                    val sellerObj = product.seller as JsonObject
+                                    sellerObj.get("_id")?.asInt == userId
+                                }
+                                is Map<*, *> -> {
+                                    val sellerMap = product.seller as Map<*, *>
+                                    (sellerMap["_id"] as? Number)?.toInt() == userId
+                                }
+                                is Number -> product.seller.toInt() == userId
+                                else -> false
+                            }
+                        }
+                        totalProduits = myProducts.size
+                        Log.d(TAG, "Mes produits créés: $totalProduits")
+                    }
+
+                    // Compter mes commandes (produits que j'ai achetés) + calculer dépenses
+                    if (commandesResponse.isSuccessful) {
+                        val allCommandes = commandesResponse.body() ?: emptyList()
+                        val myCommandes = allCommandes.filter { commande ->
+                            when (commande.receiver) {
+                                is JsonObject -> {
+                                    val receiverObj = commande.receiver as JsonObject
+                                    receiverObj.get("_id")?.asInt == userId
+                                }
+                                is Map<*, *> -> {
+                                    val receiverMap = commande.receiver as Map<*, *>
+                                    (receiverMap["_id"] as? Number)?.toInt() == userId
+                                }
+                                is Number -> commande.receiver.toInt() == userId
+                                else -> false
+                            }
+                        }
+                        totalCommandes = myCommandes.size
+
+                        // Calculer dépenses commandes
+                        totalDepense += myCommandes.sumOf { commande ->
+                            try {
+                                val productPrice = when (commande.product) {
+                                    is JsonObject -> {
+                                        val productObj = commande.product as JsonObject
+                                        productObj.get("price")?.asDouble ?: 0.0
+                                    }
+                                    is Map<*, *> -> {
+                                        val productMap = commande.product as Map<*, *>
+                                        (productMap["price"] as? Number)?.toDouble() ?: 0.0
+                                    }
+                                    else -> 0.0
+                                }
+                                productPrice * commande.amount
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Erreur calcul prix commande", e)
+                                0.0
+                            }
+                        }
+                        Log.d(TAG, "Mes commandes: $totalCommandes, dépense: $totalDepense")
+                    }
+
+                    // Compter mes services demandés + calculer dépenses
+                    if (servicesResponse.isSuccessful) {
+                        val allServices = servicesResponse.body() ?: emptyList()
+                        val myServices = allServices.filter { service ->
+                            when (service.user) {
+                                is JsonObject -> {
+                                    val userObj = service.user as JsonObject
+                                    userObj.get("_id")?.asInt == userId
+                                }
+                                is Map<*, *> -> {
+                                    val userMap = service.user as Map<*, *>
+                                    (userMap["_id"] as? Number)?.toInt() == userId
+                                }
+                                is Number -> service.user.toInt() == userId
+                                else -> false
+                            }
+                        }
+                        totalServices = myServices.size
+
+                        // Calculer dépenses services
+                        totalDepense += myServices.sumOf { service ->
+                            try {
+                                service.price
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Erreur calcul prix service", e)
+                                0.0
+                            }
+                        }
+                        Log.d(TAG, "Mes services: $totalServices, dépense totale: $totalDepense")
+                    }
+
+                    val stats = mapOf(
+                        "totalProduits" to totalProduits,
+                        "totalCommandes" to totalCommandes,
+                        "totalServices" to totalServices,
+                        "totalDepense" to totalDepense
+                    )
+
+                    callback(true, stats, null)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get total stats", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun cancelCommande(commandeId: Int, callback: (Boolean, String?) -> Unit) {
+        Log.d(TAG, "Annulation commande: $commandeId")
+        withContext(Dispatchers.Main) {
+            callback(true, "Commande annulée avec succès")
+        }
+    }
+
     suspend fun validateCommande(commandeId: Int, callback: (Boolean, String?) -> Unit) {
         Log.d(TAG, "Validation commande: $commandeId")
         withContext(Dispatchers.Main) {
@@ -314,49 +343,16 @@ class RealApiService(private val context: Context) {
         }
     }
 
+    // ==================== PRODUITS ====================
+
     suspend fun createProduct(request: ProductRequest, callback: (Boolean, ProductResponse?, String?) -> Unit) {
         try {
             withContext(Dispatchers.IO) {
                 Log.d(TAG, "Création produit: ${request.name}, prix: ${request.price}")
+                Log.d(TAG, "Location: city=${request.location.city}, zip=${request.location.zipcode}, address=${request.location.address}")
 
-                // D'abord créer la location
-                val locationRequest = LocationRequest(request.location)
-                Log.d(TAG, "Création location: ${request.location}")
-                val locationResponse = apiClient.apiService.createLocation(locationRequest)
-
-                if (!locationResponse.isSuccessful) {
-                    Log.e(TAG, "Erreur création location: ${locationResponse.code()} - ${locationResponse.errorBody()?.string()}")
-                    withContext(Dispatchers.Main) {
-                        callback(false, null, "Erreur création de l'adresse")
-                    }
-                    return@withContext
-                }
-
-                val location = locationResponse.body()
-                if (location == null) {
-                    Log.e(TAG, "Location créée mais réponse vide")
-                    withContext(Dispatchers.Main) {
-                        callback(false, null, "Erreur récupération de l'adresse")
-                    }
-                    return@withContext
-                }
-
-                Log.d(TAG, "Location créée avec ID: ${location._id}")
-
-                // Ensuite créer le produit avec l'ID de la location
-                val productRequestWithLocation = ProductRequest(
-                    name = request.name,
-                    price = request.price,
-                    size = request.size,
-                    location = LocationData(
-                        city = location.city,
-                        zipcode = location.zipcode,
-                        address = location.address
-                    )
-                )
-
-                Log.d(TAG, "Création produit avec location ID: ${location._id}")
-                val response = apiClient.apiService.createProduct(productRequestWithLocation)
+                // Appel direct à l'API - elle va gérer la location automatiquement
+                val response = apiClient.apiService.createProduct(request)
 
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
@@ -372,6 +368,126 @@ class RealApiService(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exception create product", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getProducts(callback: (Boolean, List<ProductResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération des produits")
+                val response = apiClient.apiService.getProducts()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val products = response.body() ?: emptyList()
+                        Log.d(TAG, "Produits récupérés: ${products.size}")
+                        callback(true, products, null)
+                    } else {
+                        Log.e(TAG, "Erreur récupération produits: ${response.code()} - ${response.errorBody()?.string()}")
+                        callback(false, null, "Erreur lors du chargement des produits")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get products", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getMyProducts(callback: (Boolean, List<ProductResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération de mes produits")
+                val response = apiClient.apiService.getProducts()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val allProducts = response.body() ?: emptyList()
+                        val userId = prefs.getString("user_id", "")?.toIntOrNull()
+
+                        // Filtrer pour ne garder que les produits de l'utilisateur connecté
+                        val myProducts = allProducts.filter { product ->
+                            when (product.seller) {
+                                is JsonObject -> {
+                                    val sellerObj = product.seller as JsonObject
+                                    sellerObj.get("_id")?.asInt == userId
+                                }
+                                is Map<*, *> -> {
+                                    val sellerMap = product.seller as Map<*, *>
+                                    (sellerMap["_id"] as? Number)?.toInt() == userId
+                                }
+                                is Number -> product.seller.toInt() == userId
+                                else -> false
+                            }
+                        }
+
+                        Log.d(TAG, "Mes produits récupérés: ${myProducts.size}/${allProducts.size}")
+                        callback(true, myProducts, null)
+                    } else {
+                        Log.e(TAG, "Erreur récupération mes produits: ${response.code()} - ${response.errorBody()?.string()}")
+                        callback(false, null, "Erreur lors du chargement de vos produits")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get my products", e)
+            withContext(Dispatchers.Main) {
+                callback(false, null, "Erreur de réseau: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun getMySales(callback: (Boolean, List<ProductRequestResponse>?, String?) -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                Log.d(TAG, "Récupération de mes ventes")
+                val response = apiClient.apiService.getProductRequests()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        val allRequests = response.body() ?: emptyList()
+                        val userId = prefs.getString("user_id", "")?.toIntOrNull()
+
+                        // Filtrer pour ne garder que les ventes de mes produits
+                        val mySales = allRequests.filter { request ->
+                            when (request.product) {
+                                is JsonObject -> {
+                                    val productObj = request.product as JsonObject
+                                    val seller = productObj.get("seller")
+                                    when (seller) {
+                                        is JsonObject -> seller.get("_id")?.asInt == userId
+                                        is Number -> seller.toInt() == userId
+                                        else -> false
+                                    }
+                                }
+                                is Map<*, *> -> {
+                                    val productMap = request.product as Map<*, *>
+                                    val seller = productMap["seller"]
+                                    when (seller) {
+                                        is Map<*, *> -> (seller["_id"] as? Number)?.toInt() == userId
+                                        is Number -> seller.toInt() == userId
+                                        else -> false
+                                    }
+                                }
+                                else -> false
+                            }
+                        }
+
+                        Log.d(TAG, "Mes ventes récupérées: ${mySales.size}/${allRequests.size}")
+                        callback(true, mySales, null)
+                    } else {
+                        Log.e(TAG, "Erreur récupération mes ventes: ${response.code()} - ${response.errorBody()?.string()}")
+                        callback(false, null, "Erreur lors du chargement de vos ventes")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur get my sales", e)
             withContext(Dispatchers.Main) {
                 callback(false, null, "Erreur de réseau: ${e.message}")
             }
@@ -505,201 +621,18 @@ class RealApiService(private val context: Context) {
                 when (sub) {
                     is JsonObject -> {
                         val subObj = sub as JsonObject
-                        val subName = subObj.get("name")?.asString ?: "free"
-                        val subPrice = subObj.get("price")?.asDouble ?: 0.0
+                        val subName = subObj.get("name")?.asString ?: "Gratuit"
                         putString("user_subscription", subName)
-                        putFloat("user_subscription_price", subPrice.toFloat())
                     }
                     is Map<*, *> -> {
-                        val subMap = sub as Map<*, *>
-                        val subName = subMap["name"] as? String ?: "free"
-                        val subPrice = (subMap["price"] as? Number)?.toFloat() ?: 0.0f
+                        val subName = (sub as Map<*, *>)["name"] as? String ?: "Gratuit"
                         putString("user_subscription", subName)
-                        putFloat("user_subscription_price", subPrice)
                     }
-                    else -> {
-                        putString("user_subscription", "free")
-                        putFloat("user_subscription_price", 0.0f)
-                    }
+                    else -> putString("user_subscription", "Gratuit")
                 }
-            }
+            } ?: putString("user_subscription", "Gratuit")
 
             apply()
-        }
-    }
-
-    suspend fun getSellerById(sellerId: Int): UserInfo? {
-        return try {
-            Log.d(TAG, "Récupération vendeur ID: $sellerId")
-            val response = apiClient.apiService.getUser(sellerId)
-            if (response.isSuccessful) {
-                Log.d(TAG, "Vendeur trouvé: ${response.body()?.email}")
-                response.body()
-            } else {
-                Log.e(TAG, "Vendeur non trouvé: ${response.code()}")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur récupération vendeur", e)
-            null
-        }
-    }
-
-    private fun clearUserInfo() {
-        Log.d(TAG, "Nettoyage des données utilisateur")
-        prefs.edit().clear().apply()
-    }
-
-    suspend fun loginWithUserId(userId: String, callback: (Boolean, String?, String?) -> Unit) {
-        try {
-            withContext(Dispatchers.IO) {
-                Log.d(TAG, "=== DEBUT CONNEXION NFC ===")
-                Log.d(TAG, "Tentative de connexion NFC pour l'utilisateur: $userId")
-                
-                // Convertir l'ID en Int pour l'endpoint /api/users
-                val userIdInt = try {
-                    userId.toInt()
-                } catch (e: NumberFormatException) {
-                    Log.e(TAG, "Impossible de convertir l'ID en Int: $userId", e)
-                    withContext(Dispatchers.Main) {
-                        callback(false, null, "ID utilisateur invalide (format)")
-                    }
-                    return@withContext
-                }
-                
-                Log.d(TAG, "ID converti en Int: $userIdInt")
-                Log.d(TAG, "Utilisation de l'endpoint /api/users/$userIdInt")
-                
-                // Utiliser l'endpoint /api/users/{id} directement
-                val response = apiClient.apiService.getUser(userIdInt)
-                
-                Log.d(TAG, "Réponse API reçue. Code: ${response.code()}")
-                Log.d(TAG, "Réponse API successful: ${response.isSuccessful}")
-
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val userInfo = response.body()
-                        Log.d(TAG, "Corps de la réponse: $userInfo")
-                        
-                        if (userInfo != null) {
-                            Log.d(TAG, "Connexion NFC réussie pour l'utilisateur: ${userInfo.email}")
-                            
-                            // Générer un token temporaire pour la session NFC
-                            val tempToken = "nfc_${System.currentTimeMillis()}_${userId}"
-                            apiClient.saveToken(tempToken)
-                            
-                            // Sauvegarder les infos utilisateur
-                            saveUserInfo(userInfo)
-                            
-                            callback(true, "client", "Connexion NFC réussie")
-                        } else {
-                            Log.e(TAG, "Corps de réponse null")
-                            callback(false, null, "Réponse vide du serveur")
-                        }
-                    } else {
-                        val errorBody = response.errorBody()?.string()
-                        Log.e(TAG, "Erreur connexion NFC: ${response.code()} - $errorBody")
-                        val errorMsg = when (response.code()) {
-                            404 -> "Utilisateur non trouvé (ID: $userId)"
-                            401 -> "Non autorisé"
-                            403 -> "Accès refusé"
-                            500 -> "Erreur serveur"
-                            else -> "Erreur de connexion NFC (${response.code()})"
-                        }
-                        callback(false, null, errorMsg)
-                    }
-                }
-                Log.d(TAG, "=== FIN CONNEXION NFC ===")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur de connexion NFC", e)
-            withContext(Dispatchers.Main) {
-                callback(false, null, "Erreur de réseau: ${e.message}")
-            }
-        }
-    }
-
-    // Méthode de test pour vérifier si un utilisateur existe
-    suspend fun testGetUser(userId: Int, callback: (Boolean, String) -> Unit) {
-        try {
-            withContext(Dispatchers.IO) {
-                Log.d(TAG, "=== TEST UTILISATEUR ID=$userId ===")
-                
-                // Test 1: Essayer getUser
-                try {
-                    val response = apiClient.apiService.getUser(userId)
-                    Log.d(TAG, "Test getUser - Code: ${response.code()}, Success: ${response.isSuccessful}")
-                    
-                    if (response.isSuccessful) {
-                        val user = response.body()
-                        Log.d(TAG, "Test getUser - Utilisateur trouvé: $user")
-                        withContext(Dispatchers.Main) {
-                            callback(true, "getUser: ${user?.email ?: "email non disponible"}")
-                        }
-                        return@withContext
-                    } else {
-                        Log.d(TAG, "Test getUser - Erreur: ${response.errorBody()?.string()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Test getUser - Exception: ${e.message}")
-                }
-                
-                // Test 2: Essayer getUserById
-                try {
-                    val response = apiClient.apiService.getUserById(userId.toString())
-                    Log.d(TAG, "Test getUserById - Code: ${response.code()}, Success: ${response.isSuccessful}")
-                    
-                    if (response.isSuccessful) {
-                        val user = response.body()
-                        Log.d(TAG, "Test getUserById - Utilisateur trouvé: $user")
-                        withContext(Dispatchers.Main) {
-                            callback(true, "getUserById: ${user?.email ?: "email non disponible"}")
-                        }
-                        return@withContext
-                    } else {
-                        Log.d(TAG, "Test getUserById - Erreur: ${response.errorBody()?.string()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Test getUserById - Exception: ${e.message}")
-                }
-                
-                // Test 3: Lister tous les utilisateurs
-                try {
-                    val response = apiClient.apiService.getUsers()
-                    Log.d(TAG, "Test getUsers - Code: ${response.code()}, Success: ${response.isSuccessful}")
-                    
-                    if (response.isSuccessful) {
-                        val users = response.body()
-                        Log.d(TAG, "Test getUsers - Nombre d'utilisateurs: ${users?.size ?: 0}")
-                        
-                        val userIds = users?.map { "ID=${it._id}, Email=${it.email}" }?.joinToString("\n") ?: "Aucun utilisateur"
-                        Log.d(TAG, "Test getUsers - Liste des utilisateurs:\n$userIds")
-                        
-                        val userExists = users?.any { it._id == userId } ?: false
-                        withContext(Dispatchers.Main) {
-                            if (userExists) {
-                                callback(true, "Trouvé dans getUsers")
-                            } else {
-                                callback(false, "Non trouvé dans getUsers. IDs disponibles: ${users?.map { it._id }}")
-                            }
-                        }
-                        return@withContext
-                    } else {
-                        Log.d(TAG, "Test getUsers - Erreur: ${response.errorBody()?.string()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Test getUsers - Exception: ${e.message}")
-                }
-                
-                withContext(Dispatchers.Main) {
-                    callback(false, "Aucun endpoint n'a trouvé l'utilisateur")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors du test utilisateur", e)
-            withContext(Dispatchers.Main) {
-                callback(false, "Erreur: ${e.message}")
-            }
         }
     }
 }

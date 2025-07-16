@@ -5,13 +5,6 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.NFC" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-
-    <!-- Feature NFC optionnel -->
-    <uses-feature
-        android:name="android.hardware.nfc"
-        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -51,13 +44,7 @@
         <activity
             android:name=".LoginActivity"
             android:exported="true"
-            android:theme="@style/Theme.Ecodeli">
-            <intent-filter>
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Ecodeli" />
 
         <activity
             android:name=".RegisterActivity"
@@ -86,22 +73,6 @@
             android:name=".PrestationsListActivity"
             android:exported="false"
             android:parentActivityName=".ClientDashboardActivity" />
-
-        <!-- Activités NFC -->
-        <activity
-            android:name=".NfcLoginActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Ecodeli" />
-
-        <activity
-            android:name=".NfcRegisterActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Ecodeli" />
-
-        <activity
-            android:name=".NfcSuccessActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Ecodeli" />
 
     </application>
 </manifest>

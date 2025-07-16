@@ -6,8 +6,17 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#D3D3D3"
+<<<<<<< HEAD
     android:fitsSystemWindows="true"
     android:paddingBottom="16dp">
+=======
+<<<<<<< HEAD
+    android:fitsSystemWindows="true">
+=======
+    android:fitsSystemWindows="true"
+    android:paddingBottom="16dp">
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
 
     <ScrollView
         android:layout_width="match_parent"
@@ -242,6 +251,12 @@
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+</LinearLayout>
+=======
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
 
     <!-- Footer -->
     <LinearLayout
@@ -295,3 +310,7 @@
             android:layout_weight="1" />
     </LinearLayout>
 </LinearLayout>
+<<<<<<< HEAD
+=======
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d

@@ -11,6 +11,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Ecodeli"
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
+
+        <!-- Activité principale -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+=======
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
         tools:targetApi="31" >
 
         <!-- Ajout de LoginActivity -->
@@ -20,12 +32,84 @@
         <activity
             android:name=".RegisterActivity"
             android:exported="true" >
+<<<<<<< HEAD
+=======
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+
+        <!-- Authentification -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Ecodeli">
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <!-- Dashboard Client -->
+        <activity
+            android:name=".ClientDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <!-- Profil -->
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
+        <!-- Activités Client -->
+        <activity
+            android:name=".CommandesListActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
+        <activity
+            android:name=".PrestationsListActivity"
+            android:exported="false"
+            android:parentActivityName=".ClientDashboardActivity" />
+
+        <!-- Activités NFC -->
+        <activity
+            android:name=".NfcLoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <activity
+            android:name=".NfcRegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+        <activity
+            android:name=".NfcSuccessActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Ecodeli" />
+
+    </application>
+</manifest>
+=======
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
 
     </application>
 
 </manifest>
+<<<<<<< HEAD
+=======
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d

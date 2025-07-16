@@ -4,15 +4,31 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+<<<<<<< HEAD
     android:background="#D3D3D3"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
     android:gravity="center_horizontal"
+<<<<<<< HEAD
     android:fitsSystemWindows="true">
 =======
+<<<<<<< HEAD
 >>>>>>> 172c5bb (initial commit)
 =======
 >>>>>>> 29ddf1323c83b64a47e82f80118bd70609750e94
+=======
+    android:fitsSystemWindows="true"
+    android:paddingBottom="16dp">
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+=======
+>>>>>>> 172c5bb (initial commit)
+=======
+    android:background="#D3D3D3">
+>>>>>>> b782b28 (correction activity_login.xml)
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
 
     <ScrollView
         android:layout_width="match_parent"
@@ -56,6 +72,7 @@
                     <Button
                         android:id="@+id/btnConnexion"
                         android:layout_height="40dp"
+                        android:layout_width="wrap_content"
                         android:text="Connexion"
                         android:layout_marginEnd="8dp"
                         android:background="@drawable/btn_green_border"
@@ -65,8 +82,17 @@
                     <Button
                         android:id="@+id/btnInscription"
                         android:layout_height="40dp"
+<<<<<<< HEAD
                         android:layout_marginStart="8dp"
                         android:background="@drawable/btn_green"
+=======
+                        android:layout_width="wrap_content"
+                        android:text="Inscription"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/btn_green"
+                        app:backgroundTint="@null"
+                        android:textColor="#FFFFFF" />
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
                 </LinearLayout>
 
                 <!-- Formulaire de connexion -->
@@ -130,6 +156,9 @@
                 </LinearLayout>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
 
                 <!-- Formulaire d'inscription -->
                 <LinearLayout
@@ -164,14 +193,22 @@
                         android:id="@+id/btnRegister"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+<<<<<<< HEAD
                         android:text="S'inscrire"
+=======
+                        android:text="S’inscrire"
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
                         android:background="@drawable/btn_green"
                         app:backgroundTint="@null"
                         android:textColor="#000000"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
+<<<<<<< HEAD
 =======
 >>>>>>> 172c5bb (initial commit)
+=======
+<<<<<<< HEAD
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
             </LinearLayout>
 
             <!-- NFC bouton centré -->
@@ -204,6 +241,7 @@
         </LinearLayout>
     </ScrollView>
 <<<<<<< HEAD
+<<<<<<< HEAD
 </LinearLayout>
 =======
 =======
@@ -211,6 +249,15 @@
         </LinearLayout>
     </ScrollView>
 >>>>>>> 29ddf1323c83b64a47e82f80118bd70609750e94
+=======
+</LinearLayout>
+=======
+=======
+>>>>>>> 172c5bb (initial commit)
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -271,6 +318,10 @@
     </LinearLayout>
 </LinearLayout>
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 172c5bb (initial commit)
 =======
 >>>>>>> 29ddf1323c83b64a47e82f80118bd70609750e94
+=======
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
+>>>>>>> 00361081d63d1c9b5130dcc8c94d25d569fb1a9d

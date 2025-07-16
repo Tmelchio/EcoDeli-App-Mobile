@@ -3,6 +3,7 @@ package com.ecodeli
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+<<<<<<< HEAD
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
@@ -19,11 +20,20 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var nfcButton: ImageView
     private lateinit var btnInscription: Button
     private lateinit var apiService: RealApiService
+=======
+import androidx.appcompat.app.AppCompatActivity
+
+class LoginActivity : AppCompatActivity() {
+
+    private lateinit var btnConnexion: Button
+    private lateinit var btnInscription: Button
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
+<<<<<<< HEAD
         apiService = RealApiService(this)
 
         btnLogin = findViewById(R.id.btnLogin)
@@ -41,10 +51,16 @@ class LoginActivity : AppCompatActivity() {
             performLogin()
         }
 
+=======
+        btnConnexion = findViewById(R.id.btnConnexion)
+        btnInscription = findViewById(R.id.btnInscription)
+
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
         btnInscription.setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
         }
+<<<<<<< HEAD
 
         nfcButton.setOnClickListener {
             val intent = Intent(this, NfcLoginActivity::class.java)
@@ -112,3 +128,7 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 }
+=======
+    }
+}
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)

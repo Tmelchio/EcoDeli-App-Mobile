@@ -21,6 +21,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Ecodeli"
+<<<<<<< HEAD
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
@@ -28,11 +29,23 @@
         <activity
             android:name=".MainActivity"
             android:exported="true">
+=======
+        tools:targetApi="31" >
+
+        <!-- Ajout de LoginActivity -->
+        <activity android:name=".LoginActivity" />
+
+        <!-- Activité de démarrage -->
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="true" >
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+<<<<<<< HEAD
 
         <!-- Authentification -->
         <activity
@@ -92,3 +105,9 @@
 
     </application>
 </manifest>
+=======
+
+    </application>
+
+</manifest>
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)

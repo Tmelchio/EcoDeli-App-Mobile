@@ -1,6 +1,7 @@
 package com.ecodeli
 
 import android.content.Intent
+<<<<<<< HEAD
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Button
@@ -10,11 +11,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.ecodeli.services.RealApiService
 import kotlinx.coroutines.launch
+=======
+import android.os.Bundle
+import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
 
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var btnConnexion: Button
     private lateinit var btnInscription: Button
+<<<<<<< HEAD
     private lateinit var btnRegister: Button
 
     private lateinit var etNom: EditText
@@ -26,11 +33,14 @@ class RegisterActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
     private lateinit var apiService: RealApiService
+=======
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
+<<<<<<< HEAD
         prefs = getSharedPreferences("ecodeli_prefs", MODE_PRIVATE)
         apiService = RealApiService(this)
 
@@ -154,3 +164,14 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 }
+=======
+        btnConnexion = findViewById(R.id.btnConnexion)
+        btnInscription = findViewById(R.id.btnInscription)
+
+        btnConnexion.setOnClickListener {
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+        }
+    }
+}
+>>>>>>> 7dab048 (Amélioration des interfaces de connexion et inscription)

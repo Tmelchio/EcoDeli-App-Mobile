@@ -36,25 +36,10 @@ class NfcLoginActivity : AppCompatActivity() {
             Toast.makeText(this, "Veuillez activer le NFC dans les paramètres", Toast.LENGTH_LONG).show()
         }
 
-        // MÉTHODE DE TEST - A SUPPRIMER PLUS TARD
-        testUserId3()
+        // testUserId3() supprimé : on autorise la connexion avec n'importe quel compte
     }
 
-    // Méthode de test pour vérifier si l'utilisateur ID=3 existe
-    private fun testUserId3() {
-        lifecycleScope.launch {
-            Toast.makeText(this@NfcLoginActivity, "Test: Recherche utilisateur ID=3...", Toast.LENGTH_SHORT).show()
-            
-            // Test direct avec l'endpoint getUser
-            apiService.testGetUser(3) { success, message ->
-                if (success) {
-                    Toast.makeText(this@NfcLoginActivity, "✅ Utilisateur ID=3 trouvé !", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this@NfcLoginActivity, "❌ Utilisateur ID=3 non trouvé: $message", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
+    // testUserId3 supprimé : plus de restriction sur l'ID utilisateur
 
     override fun onResume() {
         super.onResume()
